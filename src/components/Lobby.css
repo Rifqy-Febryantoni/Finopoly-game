@@ -108,27 +108,50 @@
 }
 
 
+.glass-panel {
+  background: rgba(95, 166, 215, 1);
+  border: 3px solid white;
+  border-radius: 20px;
+  
+  padding: 30px 20px; 
+  width: 90%;         
+  max-width: 500px;   
+  box-sizing: border-box;
+  
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  backdrop-filter: blur(5px);
+  margin-top: 10px;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 15px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  
+  font-size: clamp(20px, 5vw, 28px); 
+  
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 5px 0 rgba(0,0,0,0.3);
+}
+
 .lobby-title-img {
   width: 1200px;
-  max-width: 90%;
+  max-width: 85%; 
   height: auto;
   object-fit: contain;
   margin-bottom: 0px; 
   filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); 
 }
-
-.glass-panel {
-  background: rgba(95, 166, 215, 1);
-  border: 3px solid white;
-  border-radius: 20px;
-  padding: 40px;
-  width: 500px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  backdrop-filter: blur(5px);
-  margin-top: 10px; 
-}
-
 
 .custom-input {
   width: 100%;
@@ -154,25 +177,6 @@
   outline: none;
   border-color: #5fa6d7;
   box-shadow: 0 0 10px #5fa6d7;
-}
-
-.action-btn {
-  width: 100%;
-  padding: 15px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-weight: 800;
-  
-  font-size: 28px; 
-  color: white;
-  text-transform: uppercase;
-  letter-spacing: 0;
-  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
-  box-shadow: 0 5px 0 rgba(0,0,0,0.3);
 }
 
 .btn-blue { background-color: #5f63d7; }
