@@ -16,7 +16,7 @@ import dice4 from '../img/dice4.png';
 import dice5 from '../img/dice5.png';
 import dice6 from '../img/dice6.png';
 
-import bgmFile from '../audio/game_music.mp3';
+import bgmFile from '../Audio/game_music.mp3';
 
 const QUIZ_POOL = [
   { id: 1, image: '/img/quiz/quiz1.png', answer: 'B' },
