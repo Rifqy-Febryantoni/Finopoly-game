@@ -11,6 +11,8 @@ import { db } from '../firebase';
 import { ref, onValue, update } from "firebase/database";
 import './Lobby.css'; 
 import logo from '../img/Logo.png'; 
+import iascImg from '../img/iasc/iasc.png';
+
 import dice1 from '../img/dice1.png';
 import dice2 from '../img/dice2.png';
 import dice3 from '../img/dice3.png';
@@ -255,7 +257,12 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
              updates[`positions/${currentPlayerKey}`] = trackerPos;
              updateDB(updates);
              triggerStatEffect(currentPlayerKey, 'GAIN');
-             showNotification(`Lewat Start! +Rp ${finalBonus}`, 'success', 1500);
+             
+             // --- FIX ERROR boostMsg DI SINI ---
+             
+             const boostMsg = growthBoosts[currentPlayerKey] > 0 ? ` (Boosted!)` : '';
+             
+             showNotification(`Lewat Start! +Rp ${finalBonus}${boostMsg}`, 'success', 1500);
         } else {
              updateDB({ [`positions/${currentPlayerKey}`]: trackerPos });
         }
@@ -512,7 +519,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   };
 
   const getStatClass = (playerKey: any) => {
-    // PERBAIKAN: UKURAN LEBIH KECIL (w-16) DI HP
     let base = "flex flex-col items-center justify-center p-1 md:p-2 rounded-lg md:rounded-xl border-2 md:border-4 shadow-lg transition-all duration-500 w-16 md:w-36 ";
     const effect = statEffect[playerKey];
     
@@ -557,7 +563,14 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                 <p className="text-xl font-bold text-gray-600 mb-8">
                     {imWinner ? "Selamat! Pertahankan ya." : "Tetap Semangat! Coba lagi lain kali ya."}
                 </p>
-                <button onClick={() => window.location.reload()} className="bg-gray-800 text-white px-8 py-3 rounded-full font-bold hover:bg-gray-700 transition-all shadow-lg hover:scale-105">
+                <div className="mb-8 flex justify-center">
+                    <img src={iascImg} alt="IASC Logo" className="h-40 object-contain drop-shadow-md animate-bounce" />
+                </div>
+                {/* FIX 404 & RELOAD KE MENU */}
+                <button 
+                    onClick={() => window.location.href = '/'} 
+                    className="bg-gray-800 text-white px-8 py-3 rounded-full font-bold hover:bg-gray-700 transition-all shadow-lg hover:scale-105"
+                >
                     KEMBALI KE MENU
                 </button>
             </div>
@@ -581,7 +594,8 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
       </header>
 
       <main className="lobby-content">
-        <div className="relative w-full max-w-3xl mx-auto p-4 md:scale-100">
+        {/* FIX ZOOM 75% DI LAPTOP */}
+        <div className="relative w-full max-w-3xl mx-auto p-4 md:scale-75 md:origin-top transform transition-transform">
           <div className="grid grid-cols-9 grid-rows-9 gap-1 bg-gray-800 p-2 rounded-lg aspect-square">
             
             {boardTiles.map((tile, i) => {
@@ -613,7 +627,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
             <div className="bg-white col-start-2 col-end-9 row-start-2 row-end-9 m-1 rounded-lg flex flex-col justify-between shadow-inner relative overflow-hidden">
                 <div className="w-full flex justify-between items-start p-2 z-10 border-b border-gray-100 bg-gray-50 bg-opacity-80">
                     <div className={getStatClass('p1')}>
-                        {/* FONT SANGAT KECIL DI HP AGAR MUAT */}
                         
                         <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p1}</span>
                         
@@ -649,7 +662,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                                 
                                 {turn === myRole ? "GILIRAN KAMU" : `MENUNGGU ${turn === 1 ? playerNames.p1 : playerNames.p2}...`}
                             </div>
-                            {/* DADU SANGAT KECIL (w-14 / 56px) DI HP */}
                             <div className={`w-14 h-14 md:w-40 md:h-40 bg-white border-1 border-gray-300 rounded-xl md:rounded-3xl flex items-center justify-center shadow-lg ${isLocalRolling ? 'animate-shake' : ''}`}>
                                 <img src={diceImages[displayDice]} alt={`Dice ${displayDice}`} className="w-full h-full object-contain p-2" />
                             </div>
@@ -746,6 +758,11 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         </div>
       </main>
 
+      <footer className="bar footer">
+         
+         <span style={{color:'white'}}>PLAYING AS {myRole === 1 ? playerNames.p1 : playerNames.p2}</span>
+      </footer>
+
       {showExitModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
             <div className="bg-white p-4 md:p-8 rounded-2xl shadow-2xl max-w-xs md:max-w-md text-center border-4 border-red-500 animate-bounce-small">
@@ -762,7 +779,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         </div>
       )}
 
-      {/* --- POPUPS INTERAKSI (GAMBAR DIPERKECIL DI HP) --- */}
       {phase === 'INTERACTION' && interactionData?.type === 'INFO_POPUP' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-md animate-fadeIn">
             <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-cyan-400">
