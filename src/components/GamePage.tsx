@@ -11,8 +11,6 @@ import { db } from '../firebase';
 import { ref, onValue, update } from "firebase/database";
 import './Lobby.css'; 
 import logo from '../img/Logo.png'; 
-import iascImg from '../img/iasc/iasc.png';
-
 import dice1 from '../img/dice1.png';
 import dice2 from '../img/dice2.png';
 import dice3 from '../img/dice3.png';
@@ -559,9 +557,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                 <p className="text-xl font-bold text-gray-600 mb-8">
                     {imWinner ? "Selamat! Pertahankan ya." : "Tetap Semangat! Coba lagi lain kali ya."}
                 </p>
-                <div className="mb-8 flex justify-center">
-                    <img src={iascImg} alt="IASC Logo" className="h-40 object-contain drop-shadow-md animate-bounce" />
-                </div>
                 <button onClick={() => window.location.reload()} className="bg-gray-800 text-white px-8 py-3 rounded-full font-bold hover:bg-gray-700 transition-all shadow-lg hover:scale-105">
                     KEMBALI KE MENU
                 </button>
