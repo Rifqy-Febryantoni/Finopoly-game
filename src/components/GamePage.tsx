@@ -508,7 +508,7 @@ const GameBoard = ({ roomId, myRole }) => {
   };
 
   const getStatClass = (playerKey) => {
-    let base = "flex flex-col items-center justify-center p-2 rounded-xl border-4 shadow-lg transition-all duration-500 w-28 md:w-36 ";
+    let base = "flex flex-col items-center justify-center p-1 md:p-2 rounded-lg md:rounded-xl border-2 md:border-4 shadow-lg transition-all duration-500 w-20 md:w-36 ";
     const effect = statEffect[playerKey];
     const isJailed = jailedPlayers[playerKey];
     const isTurn = (playerKey === 'p1' && turn === 1) || (playerKey === 'p2' && turn === 2);
@@ -609,18 +609,19 @@ const GameBoard = ({ roomId, myRole }) => {
 
             <div className="bg-white col-start-2 col-end-9 row-start-2 row-end-9 m-1 rounded-lg flex flex-col justify-between shadow-inner relative overflow-hidden">
                 <div className="w-full flex justify-between items-start p-2 z-10 border-b border-gray-100 bg-gray-50 bg-opacity-80">
-                    <div className={getStatClass('p1')}>
-                        <span className="text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p1}</span>
-                        <span className="text-sm md:text-lg font-black">Rp {balances.p1}</span>
-                        {growthBoosts.p1 > 0 && <span className="text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p1}</span>}
-                        {jailedPlayers.p1 && <span className="text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
-                    </div>
-                    <div className={getStatClass('p2')}>
-                        <span className="text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p2}</span>
-                        <span className="text-sm md:text-lg font-black">Rp {balances.p2}</span>
-                        {growthBoosts.p2 > 0 && <span className="text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p2}</span>}
-                        {jailedPlayers.p2 && <span className="text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
-                    </div>
+                <div className={getStatClass('p1')}>
+                    <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p1}</span>
+                    <span className="text-xs md:text-lg font-black">Rp {balances.p1}</span>
+                    {growthBoosts.p1 > 0 && <span className="text-[8px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p1}</span>}
+                    {jailedPlayers.p1 && <span className="text-[8px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
+                </div>
+
+                <div className={getStatClass('p2')}>
+                    <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p2}</span>
+                    <span className="text-xs md:text-lg font-black">Rp {balances.p2}</span>
+                    {growthBoosts.p2 > 0 && <span className="text-[8px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p2}</span>}
+                    {jailedPlayers.p2 && <span className="text-[8px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
+                </div>
                 </div>
 
                 <div className="flex-1 flex flex-col items-center justify-center relative p-2">
@@ -630,23 +631,25 @@ const GameBoard = ({ roomId, myRole }) => {
                             {notification.message}
                         </div>
                     )}
-
-                    {(phase === 'IDLE' || phase === 'MOVING') && !winner && (
-                        <div className="flex flex-col items-center justify-center gap-4">
-                            <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-                                {turn === myRole ? "GILIRAN KAMU" : `MENUNGGU ${turn === 1 ? playerNames.p1 : playerNames.p2}...`}
-                            </div>
-                            <div className={`w-40 h-40 bg-white border-1 border-gray-300 rounded-3xl flex items-center justify-center shadow-lg ${isLocalRolling ? 'animate-shake' : ''}`}>
-                                <img src={diceImages[displayDice]} alt={`Dice ${displayDice}`} className="w-full h-full object-contain p-2" />
-                            </div>
-                            {turn === myRole && (
-                                <button onClick={handleRollDice} disabled={isLocalRolling} 
-                                    className="px-8 py-3 rounded-full font-bold shadow-lg text-white bg-blue-600 hover:bg-blue-700 transition-all transform active:scale-95">
-                                    {isLocalRolling ? 'ROLLING...' : 'ROLL DICE'}
-                                </button>
-                            )}
+                {(phase === 'IDLE' || phase === 'MOVING') && !winner && (
+                    <div className="flex flex-col items-center justify-center gap-2 md:gap-4"> 
+                        
+                        <div className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest">
+                            {turn === myRole ? "GILIRAN KAMU" : `MENUNGGU ${turn === 1 ? playerNames.p1 : playerNames.p2}...`}
                         </div>
-                    )}
+                        
+                        <div className={`w-20 h-20 md:w-40 md:h-40 bg-white border-1 border-gray-300 rounded-2xl md:rounded-3xl flex items-center justify-center shadow-lg ${isLocalRolling ? 'animate-shake' : ''}`}>
+                            <img src={diceImages[displayDice]} alt={`Dice ${displayDice}`} className="w-full h-full object-contain p-2" />
+                        </div>
+
+                        {turn === myRole && (
+                            <button onClick={handleRollDice} disabled={isLocalRolling} 
+                                className="px-4 py-2 md:px-8 md:py-3 rounded-full font-bold shadow-lg text-white bg-blue-600 hover:bg-blue-700 transition-all transform active:scale-95 text-xs md:text-base">
+                                {isLocalRolling ? 'ROLLING...' : 'ROLL DICE'}
+                            </button>
+                        )}
+                    </div>
+                )}
 
                     {phase === 'TRAVEL_SELECT' && (
                         <div className="text-center animate-pulse">

@@ -1,28 +1,21 @@
-
+/* =========================
+   ANIMATIONS
+========================= */
 @keyframes zoomIn {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
 }
-
-.animate-zoomIn {
-  animation: zoomIn 0.3s ease-out forwards;
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
-}
+.animate-zoomIn { animation: zoomIn 0.3s ease-out forwards; }
 
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+.animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
 
+/* =========================
+   BASE CONTAINER
+========================= */
 .game-bg-container {
   display: flex;
   flex-direction: column;
@@ -60,63 +53,55 @@
   box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
 
-.logo {
-  height: 100%;
-  object-fit: contain;
-}
+.logo { height: 100%; object-fit: contain; }
+.footer { justify-content: center; margin-top: auto; background-color: #5fa6d7; color: white; font-weight: bold; }
 
-.footer {
-  justify-content: center;
-  margin-top: auto; 
-  background-color: #5fa6d7;
-  color: white;
-  font-weight: bold;
-}
-
-.nav-container {
-  display: flex;
-  gap: 40px;
-  align-items: center;
-}
-
+.nav-container { display: flex; gap: 40px; align-items: center; }
 .nav-text {
   font-family: ui-sans-serif, system-ui, sans-serif;
-  font-weight: 500; 
-  font-size: 25px;
-  color: white;
-  text-transform: uppercase;
-  cursor: pointer;
-  user-select: none;
-  text-decoration: none;
-  text-shadow:
-    1px 0 0 rgba(255,255,255,0.9), -1px 0 0 rgba(255,255,255,0.9),
-    0 1px 0 rgba(255,255,255,0.9), 0 -1px 0 rgba(255,255,255,0.9),
-    3px 3px 6px rgba(0, 0, 0, 0.55);
+  font-weight: 500; font-size: 25px; color: white;
+  text-transform: uppercase; cursor: pointer; user-select: none; text-decoration: none;
+  text-shadow: 1px 0 0 rgba(255,255,255,0.9), 3px 3px 6px rgba(0, 0, 0, 0.55);
   transition: transform 0.2s;
 }
+.nav-text:hover { transform: scale(1.05); }
 
-.nav-text:hover {
-  transform: scale(1.05);
-}
-
+/* =========================
+   LOBBY CONTENT
+========================= */
 .lobby-content {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
+  padding: 10px; /* Padding aman agar tidak mepet layar */
+  box-sizing: border-box;
 }
 
+.lobby-title-img {
+  width: 1200px;
+  max-width: 85%; /* Responsif: Max 85% lebar layar */
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 0px; 
+  filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); 
+}
 
+/* =========================
+   GLASS PANEL (KARTU UTAMA)
+========================= */
 .glass-panel {
   background: rgba(95, 166, 215, 1);
   border: 3px solid white;
   border-radius: 20px;
   
-  width: 90%;          
-  max-width: 500px;    
+  /* --- SETUP RESPONSIF --- */
+  width: 90%;          /* Lebar 90% dari layar HP */
+  max-width: 500px;    /* Tapi jangan lebih dari 500px di Laptop */
   padding: 30px 20px;  
-  box-sizing: border-box; 
+  box-sizing: border-box; /* Agar padding tidak membuat kartu melebar */
+  /* ----------------------- */
 
   text-align: center;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -128,35 +113,18 @@
   font-weight: 800; 
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); 
 }
-.action-btn {
-  width: 100%;
-  padding: 15px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-weight: 800;
-  
-  font-size: clamp(20px, 5vw, 28px); 
-  
-  color: white;
-  text-transform: uppercase;
-  letter-spacing: 0;
-  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
-  box-shadow: 0 5px 0 rgba(0,0,0,0.3);
+
+/* Text didalam panel */
+.glass-panel p, 
+.glass-panel div {
+  font-size: 24px;
+  margin: 10px 0;
+  letter-spacing: 1px;
 }
 
-.lobby-title-img {
-  width: 1200px;
-  max-width: 85%; 
-  height: auto;
-  object-fit: contain;
-  margin-bottom: 0px; 
-  filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); 
-}
-
+/* =========================
+   INPUTS & BUTTONS
+========================= */
 .custom-input {
   width: 100%;
   padding: 15px;
@@ -171,17 +139,29 @@
   text-align: center;
   box-sizing: border-box;
 }
+.custom-input:focus { outline: none; border-color: #5fa6d7; box-shadow: 0 0 10px #5fa6d7; }
 
-.custom-input::placeholder {
-  color: #666;
-  opacity: 1;
+.action-btn {
+  width: 100%;
+  padding: 15px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  
+  /* Font responsif: Min 20px, Ideal 5% layar, Max 28px */
+  font-size: clamp(20px, 5vw, 28px); 
+  
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 5px 0 rgba(0,0,0,0.3);
 }
-
-.custom-input:focus {
-  outline: none;
-  border-color: #5fa6d7;
-  box-shadow: 0 0 10px #5fa6d7;
-}
+.glass-panel .action-btn { font-weight: 900; letter-spacing: 1px; }
 
 .btn-blue { background-color: #5f63d7; }
 .btn-blue:hover { background-color: #4a72c7; transform: translateY(-2px); }
@@ -189,99 +169,74 @@
 .btn-green { background-color: #5fd778; }
 .btn-green:hover { background-color: #4ac764; transform: translateY(-2px); }
 
+/* =========================
+   MISC ELEMENTS
+========================= */
 .divider {
   margin: 20px 0;
   border-top: 2px dashed rgba(255,255,255,0.3);
   position: relative;
   margin-top: 50px;
 }
-
 .divider span {
-  background: transparent;
-  color: white;
-  
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-weight: bold;
-  
-  padding: 0 10px;
-  position: relative;
-  top: 5px;
-  text-shadow: 1px 1px 2px black;
+  background: transparent; color: white; font-weight: bold; padding: 0 10px;
+  position: relative; top: 5px; text-shadow: 1px 1px 2px black;
 }
 
 .error-msg {
-  color: #ff6b6b;
-  font-weight: bold;
-  margin-top: 10px;
+  color: #ff6b6b; font-weight: bold; margin-top: 10px;
   text-shadow: 1px 1px 0 black;
-  font-family: ui-sans-serif, system-ui, sans-serif;
 }
 
-.glass-panel {
-  color: white; 
-  font-family: ui-sans-serif, system-ui, sans-serif; 
-  font-weight: 800; 
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); 
-}
-
-.glass-panel p, 
-.glass-panel div {
-  font-size: 24px;
-  margin: 10px 0;
-  letter-spacing: 1px;
-}
-
-.player-name {
-  color: #5fd778; 
-  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
-}
-
+.player-name { color: #5fd778; text-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
 .player-waiting {
-  color: #ff6b6b; 
-  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
-  font-style: italic;
-  animation: pulse-text 1.5s infinite;
+  color: #ff6b6b; text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+  font-style: italic; animation: pulse-text 1.5s infinite;
 }
-
 .waiting-message {
-  font-size: 20px;
-  font-weight: 700;
-  margin-top: 30px;
-  margin-bottom: 20px;
-  text-transform: uppercase;
-  color: #e0e0e0;
-  letter-spacing: 2px;
+  font-size: 20px; font-weight: 700; margin-top: 30px; margin-bottom: 20px;
+  text-transform: uppercase; color: #e0e0e0; letter-spacing: 2px;
 }
+@keyframes pulse-text { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
-@keyframes pulse-text {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
-}
 
-.glass-panel .action-btn {
-  font-weight: 900;
-  letter-spacing: 1px;
-}
+/* =======================================================
+   MEDIA QUERY: HP / MOBILE OPTIMIZATION
+   (Agar Header & Waiting Room tidak rusak di layar kecil)
+======================================================= */
 
+/* 1. Fix Header (Tablet & Mobile) */
 @media (max-width: 768px) {
-  .bar {
-    height: 70px; 
+  .bar { height: 70px; }
+  .header { padding: 0 15px; }
+  .nav-container { gap: 15px; }
+  .nav-text { font-size: 14px; }
+  .logo { height: 80%; }
+}
+
+/* 2. Fix Isi Kartu Lobby & Waiting Room (Mobile Kecil) */
+@media (max-width: 600px) {
+  .glass-panel {
+    width: 95%; /* Lebarkan sedikit di HP */
+    padding: 20px 10px; /* Kurangi padding agar muat lebih banyak konten */
   }
 
-  .header {
-    padding: 0 15px; 
+  /* Kecilkan font di dalam kartu agar nama/ID panjang tidak menabrak */
+  .glass-panel p, 
+  .glass-panel div,
+  .waiting-message {
+    font-size: 16px !important; 
+    margin: 5px 0;
   }
 
-  .nav-container {
-    gap: 15px; 
-  }
-
-  .nav-text {
-    font-size: 14px; 
+  /* Kecilkan input & tombol */
+  .custom-input {
+    font-size: 18px;
+    padding: 10px;
   }
   
-  .logo {
-    height: 80%;
+  .action-btn {
+    font-size: 18px;
+    padding: 12px;
   }
 }
