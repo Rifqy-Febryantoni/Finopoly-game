@@ -11,6 +11,7 @@ import { db } from '../firebase';
 import { ref, onValue, update } from "firebase/database";
 import './Lobby.css'; 
 import logo from '../img/Logo.png'; 
+
 import dice1 from '../img/dice1.png';
 import dice2 from '../img/dice2.png';
 import dice3 from '../img/dice3.png';
@@ -255,7 +256,10 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
              updates[`positions/${currentPlayerKey}`] = trackerPos;
              updateDB(updates);
              triggerStatEffect(currentPlayerKey, 'GAIN');
-             showNotification(`Lewat Start! +Rp ${finalBonus}`, 'success', 1500);
+             
+             
+             const boostMsg = growthBoosts[currentPlayerKey] > 0 ? ` (Boosted!)` : '';
+             showNotification(`Lewat Start! +Rp ${finalBonus}${boostMsg}`, 'success', 1500);
         } else {
              updateDB({ [`positions/${currentPlayerKey}`]: trackerPos });
         }
@@ -512,7 +516,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   };
 
   const getStatClass = (playerKey: any) => {
-    // PERBAIKAN: UKURAN LEBIH KECIL (w-16) DI HP
     let base = "flex flex-col items-center justify-center p-1 md:p-2 rounded-lg md:rounded-xl border-2 md:border-4 shadow-lg transition-all duration-500 w-16 md:w-36 ";
     const effect = statEffect[playerKey];
     
@@ -557,7 +560,10 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                 <p className="text-xl font-bold text-gray-600 mb-8">
                     {imWinner ? "Selamat! Pertahankan ya." : "Tetap Semangat! Coba lagi lain kali ya."}
                 </p>
-                <button onClick={() => window.location.reload()} className="bg-gray-800 text-white px-8 py-3 rounded-full font-bold hover:bg-gray-700 transition-all shadow-lg hover:scale-105">
+                <button 
+                    onClick={() => window.location.href = '/'} 
+                    className="bg-gray-800 text-white px-8 py-3 rounded-full font-bold hover:bg-gray-700 transition-all shadow-lg hover:scale-105"
+                >
                     KEMBALI KE MENU
                 </button>
             </div>
@@ -569,6 +575,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
 
   return (
     <div className="game-bg-container">
+      {/* HEADER FIX HEIGHT */}
       <header className="bar header">
         <img src={logo} alt="Finopoly Logo" className="logo" />
         <nav className="nav-container">
@@ -580,9 +587,14 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         </nav>
       </header>
 
-      <main className="lobby-content">
-        <div className="relative w-full max-w-3xl mx-auto p-4 md:scale-100">
-          <div className="grid grid-cols-9 grid-rows-9 gap-1 bg-gray-800 p-2 rounded-lg aspect-square">
+      {/* MAIN BOARD WRAPPER (AUTO-FIT SCREEN) */}
+      <main className="flex-1 w-full flex items-center justify-center p-2 overflow-hidden">
+        
+        {/* MAGIC CSS: ASPECT SQUARE + HEIGHT CALCULATION */}
+        <div className="relative bg-gray-800 p-1 rounded-lg shadow-2xl aspect-square max-h-full max-w-full 
+                        h-[calc(100vh-140px)] md:h-[calc(100vh-160px)]"> 
+          
+          <div className="grid grid-cols-9 grid-rows-9 gap-0.5 md:gap-1 w-full h-full bg-gray-800 p-1 rounded-lg">
             
             {boardTiles.map((tile, i) => {
               const pos = getGridPosition(i);
@@ -598,46 +610,49 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
               else if (owner === 'p2') overlayClass = "bg-red-600/45"; 
               return (
                 <div key={tile.id} onClick={() => handleTileClick(i)} 
-                    className={`${borderClass} flex items-center justify-center rounded-md overflow-hidden relative shadow-md transition-all duration-300 group`}
+                    className={`${borderClass} flex items-center justify-center rounded overflow-hidden relative shadow-md transition-all duration-300 group`}
                     style={{ gridRow: pos.row, gridColumn: pos.col }}>
                   <img src={tile.image} alt={`Tile ${i}`} className="absolute inset-0 w-full h-full object-fill z-0" />
                   {overlayClass && <div className={`absolute inset-0 z-10 ${overlayClass} pointer-events-none transition-opacity duration-500`}></div>}
-                  <div className="absolute flex gap-1 z-20 pointer-events-none">
-                    {isP1Here && <div className="w-3 h-3 md:w-5 md:h-5 bg-blue-600 rounded-full border-2 border-white shadow-sm ring-2 ring-blue-300 transform -translate-x-1"></div>}
-                    {isP2Here && <div className="w-3 h-3 md:w-5 md:h-5 bg-red-600 rounded-full border-2 border-white shadow-sm ring-2 ring-red-300 transform translate-x-1"></div>}
+                  <div className="absolute flex gap-0.5 md:gap-1 z-20 pointer-events-none">
+                    {isP1Here && <div className="w-2 h-2 md:w-4 md:h-4 bg-blue-600 rounded-full border-1 md:border-2 border-white shadow-sm"></div>}
+                    {isP2Here && <div className="w-2 h-2 md:w-4 md:h-4 bg-red-600 rounded-full border-1 md:border-2 border-white shadow-sm"></div>}
                   </div>
                 </div>
               );
             })}
 
-            <div className="bg-white col-start-2 col-end-9 row-start-2 row-end-9 m-1 rounded-lg flex flex-col justify-between shadow-inner relative overflow-hidden">
-                <div className="w-full flex justify-between items-start p-2 z-10 border-b border-gray-100 bg-gray-50 bg-opacity-80">
+            {/* TENGAH BOARD (Dashboard) */}
+            <div className="bg-white col-start-2 col-end-9 row-start-2 row-end-9 m-0.5 md:m-1 rounded-lg flex flex-col justify-between shadow-inner relative overflow-hidden">
+                
+                {/* INFO PEMAIN (ATAS) */}
+                <div className="w-full flex justify-between items-start p-1 md:p-2 z-10 border-b border-gray-100 bg-gray-50 bg-opacity-80">
                     <div className={getStatClass('p1')}>
-                        {/* FONT SANGAT KECIL DI HP AGAR MUAT */}
                         
-                        <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p1}</span>
+                        <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p1}</span>
                         
                         <span className="text-[10px] md:text-lg font-black">Rp {balances.p1}</span>
                         
-                        {growthBoosts.p1 > 0 && <span className="text-[8px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p1}</span>}
+                        {growthBoosts.p1 > 0 && <span className="text-[6px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p1}</span>}
                         
-                        {jailedPlayers.p1 && <span className="text-[8px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
+                        {jailedPlayers.p1 && <span className="text-[6px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
                     </div>
                     <div className={getStatClass('p2')}>
                         
-                        <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p2}</span>
+                        <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p2}</span>
                         
                         <span className="text-[10px] md:text-lg font-black">Rp {balances.p2}</span>
                         
-                        {growthBoosts.p2 > 0 && <span className="text-[8px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p2}</span>}
+                        {growthBoosts.p2 > 0 && <span className="text-[6px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p2}</span>}
                         
-                        {jailedPlayers.p2 && <span className="text-[8px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
+                        {jailedPlayers.p2 && <span className="text-[6px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
                     </div>
                 </div>
 
-                <div className="flex-1 flex flex-col items-center justify-center relative p-2">
+                {/* AREA INTERAKSI (TENGAH) */}
+                <div className="flex-1 flex flex-col items-center justify-center relative p-1 md:p-2 overflow-hidden">
                     {notification && (
-                        <div className={`absolute top-0 z-50 px-6 py-2 rounded-full shadow-lg font-bold text-sm animate-bounce border transition-all duration-300
+                        <div className={`absolute top-0 z-50 px-2 md:px-6 py-1 md:py-2 rounded-full shadow-lg font-bold text-[10px] md:text-sm animate-bounce border transition-all duration-300
                             ${notification.type === 'error' ? 'bg-red-50 border-red-200 text-red-600' : 'bg-green-50 border-green-200 text-green-700'}`}>
                             {notification.message}
                         </div>
@@ -645,14 +660,16 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
 
                     {(phase === 'IDLE' || phase === 'MOVING') && !winner && (
                         <div className="flex flex-col items-center justify-center gap-1 md:gap-4">
-                            <div className="text-[9px] md:text-sm font-bold text-gray-400 uppercase tracking-widest">
+                            <div className="text-[8px] md:text-sm font-bold text-gray-400 uppercase tracking-widest">
                                 
                                 {turn === myRole ? "GILIRAN KAMU" : `MENUNGGU ${turn === 1 ? playerNames.p1 : playerNames.p2}...`}
                             </div>
-                            {/* DADU SANGAT KECIL (w-14 / 56px) DI HP */}
-                            <div className={`w-14 h-14 md:w-40 md:h-40 bg-white border-1 border-gray-300 rounded-xl md:rounded-3xl flex items-center justify-center shadow-lg ${isLocalRolling ? 'animate-shake' : ''}`}>
+                            
+                            {/* DADU RESPONSIVE */}
+                            <div className={`w-14 h-14 md:w-32 md:h-32 bg-white border-1 border-gray-300 rounded-xl md:rounded-3xl flex items-center justify-center shadow-lg ${isLocalRolling ? 'animate-shake' : ''}`}>
                                 <img src={diceImages[displayDice]} alt={`Dice ${displayDice}`} className="w-full h-full object-contain p-2" />
                             </div>
+
                             {turn === myRole && (
                                 <button onClick={handleRollDice} disabled={isLocalRolling} 
                                     className="px-4 py-1 md:px-8 md:py-3 rounded-full font-bold shadow-lg text-white bg-blue-600 hover:bg-blue-700 transition-all transform active:scale-95 text-[10px] md:text-base">
@@ -664,34 +681,34 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
 
                     {phase === 'TRAVEL_SELECT' && (
                         <div className="text-center animate-pulse">
-                            <div className="text-2xl md:text-4xl mb-2">✈️</div>
+                            <div className="text-2xl md:text-4xl mb-1">✈️</div>
                             <h2 className="text-sm md:text-xl font-bold text-yellow-600">TRAVEL MODE</h2>
                             <p className="text-[10px] md:text-sm text-gray-500">Klik kotak tujuan!</p>
                         </div>
                     )}
 
                     {phase === 'INTERACTION' && interactionData && !winner && (
-                        <div className="w-full max-w-[90%] md:max-w-md px-1 text-center animate-fadeIn">
+                        <div className="w-full max-w-full px-1 text-center animate-fadeIn overflow-y-auto max-h-full">
                             {interactionData.type === 'GROWTH' && (
                                 <>
                                     <h3 className="text-sm md:text-2xl font-bold mb-1 text-purple-600">GROWTH BOOST</h3>
-                                    <div className="text-2xl md:text-5xl mb-2">🚀</div>
-                                    <p className="text-[10px] md:text-sm font-medium text-gray-600 mb-4">Pendapatan +<span className="font-bold text-green-600">50%</span>!</p>
-                                    {turn === myRole ? <button onClick={handleTakeBoost} className="w-full bg-purple-600 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-bold hover:bg-purple-700 shadow-lg text-xs md:text-base">AMBIL</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
+                                    <div className="text-2xl md:text-5xl mb-1">🚀</div>
+                                    <p className="text-[10px] md:text-sm font-medium text-gray-600 mb-2">Pendapatan +<span className="font-bold text-green-600">50%</span>!</p>
+                                    {turn === myRole ? <button onClick={handleTakeBoost} className="w-full bg-purple-600 text-white py-1 md:py-3 rounded-lg md:rounded-xl font-bold hover:bg-purple-700 shadow-lg text-xs md:text-base">AMBIL</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
                                 </>
                             )}
                             {interactionData.type === 'TAX' && (
                                 <>
                                     <h3 className="text-sm md:text-2xl font-bold mb-1 text-red-600">PAJAK</h3>
-                                    <p className="text-xl md:text-4xl font-black text-gray-800 mb-4">- {interactionData.amount}</p>
-                                    {turn === myRole ? <button onClick={handlePayTax} className="w-full bg-red-600 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-bold hover:bg-red-700 shadow-lg text-xs md:text-base">BAYAR</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
+                                    <p className="text-lg md:text-4xl font-black text-gray-800 mb-2">- {interactionData.amount}</p>
+                                    {turn === myRole ? <button onClick={handlePayTax} className="w-full bg-red-600 text-white py-1 md:py-3 rounded-lg md:rounded-xl font-bold hover:bg-red-700 shadow-lg text-xs md:text-base">BAYAR</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
                                 </>
                             )}
                             {interactionData.type === 'INTEREST' && (
                                 <>
                                     <h3 className="text-sm md:text-2xl font-bold mb-1 text-green-600">BUNGA</h3>
-                                    <p className="text-xl md:text-4xl font-black text-gray-800 mb-4">+ {interactionData.amount}</p>
-                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-bold hover:bg-green-700 shadow-lg animate-pulse text-xs md:text-base">KLAIM</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
+                                    <p className="text-lg md:text-4xl font-black text-gray-800 mb-2">+ {interactionData.amount}</p>
+                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-1 md:py-3 rounded-lg md:rounded-xl font-bold hover:bg-green-700 shadow-lg animate-pulse text-xs md:text-base">KLAIM</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
                                 </>
                             )}
                             {interactionData.type === 'ASSET_OWNED' && (
@@ -715,8 +732,8 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                             {interactionData.type === 'ASSET_DIVIDEND' && (
                                 <>
                                     <h3 className="text-sm md:text-xl font-bold text-green-600 mb-2">DIVIDEN</h3>
-                                    <p className="text-xl md:text-4xl font-black text-gray-800 mb-4">+ {interactionData.dividend}</p>
-                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-bold shadow-lg text-xs md:text-base">AMBIL</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
+                                    <p className="text-lg md:text-4xl font-black text-gray-800 mb-2">+ {interactionData.dividend}</p>
+                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-1 md:py-3 rounded-lg md:rounded-xl font-bold shadow-lg text-xs md:text-base">AMBIL</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
                                 </>
                             )}
                         </div>
@@ -724,7 +741,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
 
                     {phase === 'JAIL_DECISION' && (
                         <div className="w-full max-w-[90%] animate-fadeIn">
-                            <h2 className="text-sm md:text-xl font-bold text-gray-800 mb-2 md:mb-4 text-center">👮 PILIHAN PENJARA</h2>
+                            <h2 className="text-sm md:text-xl font-bold text-gray-800 mb-1 md:mb-4 text-center">👮 PILIHAN PENJARA</h2>
                             {turn === myRole ? (
                                 <div className="flex gap-2 justify-center">
                                     <button onClick={handleJailRoll} disabled={isLocalRolling} className="flex-1 bg-gray-800 text-white p-2 rounded-lg font-bold hover:bg-gray-700 text-[10px] md:text-sm">ROLL (1/6)</button>
@@ -735,7 +752,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                     )}
                 </div>
 
-                <div className="w-full text-center py-1 bg-gray-50 border-t border-gray-100">
+                <div className="w-full text-center py-0.5 md:py-1 bg-gray-50 border-t border-gray-100">
                     <span className="text-[8px] md:text-[10px] text-gray-400 font-mono">
                         
                         Posisi: {playerNames.p1}({positions.p1}) | {playerNames.p2}({positions.p2})
@@ -745,6 +762,10 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
           </div>
         </div>
       </main>
+
+      <footer className="bar footer">
+         <span style={{fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontWeight: 'bold', fontSize: '12px'}}>FINOPOLY © 2025</span>
+      </footer>
 
       {showExitModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
@@ -762,13 +783,13 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         </div>
       )}
 
-      {/* --- POPUPS INTERAKSI (GAMBAR DIPERKECIL DI HP) --- */}
+      {/* --- POPUPS INTERAKSI FULLSCREEN --- */}
       {phase === 'INTERACTION' && interactionData?.type === 'INFO_POPUP' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-md animate-fadeIn">
             <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-cyan-400">
                 <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-cyan-600 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">INFOGRAFIS</div>
                 <div className="mt-4 rounded-xl overflow-hidden border border-gray-200">
-                    <img src={interactionData.content} alt="Informasi Keuangan" className="w-full h-auto object-contain max-h-[30vh] md:max-h-[70vh]" />
+                    <img src={interactionData.content} alt="Informasi Keuangan" className="w-full h-auto object-contain max-h-[30vh] md:max-h-[60vh]" />
                 </div>
                 <div className="mt-4 flex justify-center">
                     {turn === myRole ? (
@@ -785,7 +806,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                 <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-pink-500 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">SEKTOR</div>
                 <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
                     {interactionData.popupImage ? (
-                        <img src={interactionData.popupImage} alt="Asset Offer" className="w-full h-auto object-contain max-h-[25vh] md:max-h-[60vh]" />
+                        <img src={interactionData.popupImage} alt="Asset Offer" className="w-full h-auto object-contain max-h-[25vh] md:max-h-[50vh]" />
                     ) : (
                         <div className="p-10 text-gray-400">Gambar Sektor Tidak Ditemukan</div>
                     )}
@@ -890,7 +911,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl text-center border-4 border-gray-300 animate-pulse">
                 <div className="text-4xl md:text-6xl mb-2 md:mb-4">⚖️</div>
                 <h2 className="text-sm md:text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">SIDANG BERLANGSUNG</h2>
-                
                 <p className="text-gray-600 font-bold text-xs md:text-lg">Menunggu <span className="text-blue-600">{turn === 1 ? playerNames.p1 : playerNames.p2}</span> menjawab...</p>
             </div>
         </div>

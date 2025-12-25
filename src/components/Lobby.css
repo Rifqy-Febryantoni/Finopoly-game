@@ -1,31 +1,22 @@
 /* =========================
-   ANIMATIONS
+   BASE & ANIMATIONS
 ========================= */
-@keyframes zoomIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
-}
+@keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 .animate-zoomIn { animation: zoomIn 0.3s ease-out forwards; }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
 
-/* =========================
-   BASE CONTAINER
-========================= */
 .game-bg-container {
   display: flex;
   flex-direction: column;
   width: 100vw;
-  height: 100vh;
+  height: 100vh; /* Pastikan tinggi 100% layar */
   background-image: url('../img/game_bg.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  overflow: hidden; /* Mencegah scrollbar muncul jika tidak perlu */
+  overflow: hidden; /* Mencegah scrollbar ganda */
   margin: 0;
   padding: 0;
   color: white;
@@ -37,207 +28,152 @@
 ========================= */
 .bar {
   width: 100%;
-  height: 90px;
+  height: 70px; /* Header lebih pendek agar board lebih lega */
   background-color: #5fa6d7;
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  z-index: 10;
+  z-index: 50;
+  flex-shrink: 0; /* Header tidak boleh mengecil */
 }
 
 .header {
   justify-content: space-between;
-  padding: 0 40px;
-  position: sticky;
-  top: 0;
+  padding: 0 30px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
 
-.logo { height: 100%; object-fit: contain; }
-.footer { justify-content: center; margin-top: auto; background-color: #5fa6d7; color: white; font-weight: bold; }
+.logo { height: 80%; object-fit: contain; }
+.footer { 
+  justify-content: center; 
+  background-color: #5fa6d7; 
+  color: white; 
+  font-weight: bold;
+  height: 40px; /* Footer pendek fix */
+  font-size: 12px;
+  flex-shrink: 0; /* Footer tidak boleh hilang/mengecil */
+}
 
-.nav-container { display: flex; gap: 40px; align-items: center; }
+.nav-container { display: flex; gap: 30px; align-items: center; }
 .nav-text {
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-weight: 500; font-size: 25px; color: white;
-  text-transform: uppercase; cursor: pointer; user-select: none; text-decoration: none;
-  text-shadow: 1px 0 0 rgba(255,255,255,0.9), 3px 3px 6px rgba(0, 0, 0, 0.55);
+  font-weight: 700; font-size: 20px; color: white;
+  text-transform: uppercase; cursor: pointer;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
   transition: transform 0.2s;
 }
 .nav-text:hover { transform: scale(1.05); }
 
 /* =========================
-   LOBBY CONTENT
+   CONTENT AREA
 ========================= */
 .lobby-content {
-  flex: 1;
+  flex: 1; /* Mengisi sisa ruang antara header dan footer */
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
   padding: 10px;
   box-sizing: border-box;
-  overflow: hidden; /* Pastikan konten tidak tumpah */
+  overflow-y: auto; /* Scroll jika konten benar-benar panjang */
 }
 
 .lobby-title-img {
-  width: 1200px;
-  max-width: 85%;
+  width: 600px; /* Ukuran default laptop diperkecil */
+  max-width: 80%;
   height: auto;
   object-fit: contain;
-  margin-bottom: 0px; 
+  margin-bottom: 10px; 
   filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); 
 }
 
 /* =========================
-   GLASS PANEL (KARTU WAITING ROOM)
+   GLASS PANEL (KARTU)
 ========================= */
 .glass-panel {
-  background: rgba(95, 166, 215, 1);
+  background: rgba(95, 166, 215, 0.95);
   border: 3px solid white;
   border-radius: 20px;
   
-  width: 90%;          
-  max-width: 500px;    
-  padding: 30px 20px;  
-  box-sizing: border-box; 
+  /* Ukuran Responsif */
+  width: 100%;
+  max-width: 450px; /* Lebar maksimal di Laptop dikecilkan */
+  padding: 25px;
+  box-sizing: border-box;
 
   text-align: center;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   backdrop-filter: blur(5px);
-  margin-top: 10px; 
   
   color: white; 
-  font-family: ui-sans-serif, system-ui, sans-serif; 
   font-weight: 800; 
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); 
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6); 
 }
 
-.glass-panel p, 
-.glass-panel div {
-  font-size: 24px;
-  margin: 10px 0;
-  letter-spacing: 1px;
-}
+/* Font umum dalam panel */
+.glass-panel p, .glass-panel div { font-size: 18px; margin: 5px 0; }
+
+/* Judul Waiting Room */
+.text-3xl { font-size: 24px !important; }
+
+/* Room ID */
+.text-4xl { font-size: 32px !important; margin: 10px 0 !important; }
 
 /* =========================
    INPUTS & BUTTONS
 ========================= */
 .custom-input {
   width: 100%;
-  padding: 15px;
+  padding: 12px;
   margin: 10px 0;
   border-radius: 10px;
   border: 2px solid #5fa6d7;
-  background: rgba(255, 255, 255, 0.9); 
-  color: black; 
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-weight: bold;
-  font-size: 25px;
-  text-align: center;
-  box-sizing: border-box;
+  font-weight: bold; font-size: 20px; text-align: center;
 }
-.custom-input:focus { outline: none; border-color: #5fa6d7; box-shadow: 0 0 10px #5fa6d7; }
-
 .action-btn {
   width: 100%;
-  padding: 15px;
+  padding: 12px;
   margin-top: 10px;
-  border: none;
   border-radius: 10px;
   cursor: pointer;
-  
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-weight: 800;
-  
-  font-size: clamp(20px, 5vw, 28px); 
-  
-  color: white;
+  border: none;
+  font-weight: 800; font-size: 20px; color: white;
   text-transform: uppercase;
-  letter-spacing: 0;
-  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
-  box-shadow: 0 5px 0 rgba(0,0,0,0.3);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.2);
 }
-.glass-panel .action-btn { font-weight: 900; letter-spacing: 1px; }
-
 .btn-blue { background-color: #5f63d7; }
-.btn-blue:hover { background-color: #4a72c7; transform: translateY(-2px); }
-
 .btn-green { background-color: #5fd778; }
-.btn-green:hover { background-color: #4ac764; transform: translateY(-2px); }
+.error-msg { color: #ff6b6b; font-weight: bold; text-shadow: 1px 1px 0 black; }
 
-.error-msg { color: #ff6b6b; font-weight: bold; margin-top: 10px; text-shadow: 1px 1px 0 black; }
-
-.player-name { color: #5fd778; text-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
-.player-waiting {
-  color: #ff6b6b; text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
-  font-style: italic; animation: pulse-text 1.5s infinite;
-}
-.waiting-message {
-  font-size: 20px; font-weight: 700; margin-top: 30px; margin-bottom: 20px;
-  text-transform: uppercase; color: #e0e0e0; letter-spacing: 2px;
-}
-@keyframes pulse-text { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
-
+/* Status Player */
+.player-name { color: #5fd778; }
+.player-waiting { color: #ff6b6b; font-style: italic; animation: pulse-text 1.5s infinite; }
+.waiting-message { font-size: 16px; margin: 20px 0; color: #e0e0e0; }
+@keyframes pulse-text { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
 /* =======================================================
-   MEDIA QUERY: HP / MOBILE OPTIMIZATION
+   MEDIA QUERY: MOBILE / HP
 ======================================================= */
-
-@media (max-width: 768px) {
-  .bar { height: 60px; }
-  .header { padding: 0 10px; }
-  .nav-container { gap: 10px; }
-  .nav-text { font-size: 12px; }
-  .logo { height: 70%; }
-}
-
 @media (max-width: 600px) {
-  /* Judul Lobby */
-  .lobby-title-img { max-width: 70%; }
+  .bar { height: 60px; }
+  .header { padding: 0 15px; }
+  .nav-container { gap: 15px; }
+  .nav-text { font-size: 14px; }
+  .logo { height: 70%; }
 
-  /* Kartu Waiting Room */
   .glass-panel {
-    width: 95%; /* Hampir full layar */
-    padding: 15px 5px; /* Padding kiri-kanan SANGAT TIPIS */
-    margin-top: 5px;
+    max-width: 90vw; /* 90% lebar HP, pasti muat */
+    padding: 15px;
   }
-
-  /* Font di dalam kartu (Label Player & Waiting Message) */
-  .glass-panel p, 
-  .glass-panel div,
-  .waiting-message {
-    font-size: 14px !important; /* Paksa font kecil */
-    margin: 5px 0;
-  }
-
-  /* Baris Player 1 / Player 2 */
-  .flex.justify-between {
-    flex-direction: row; /* Tetap satu baris */
-    align-items: center;
-    gap: 5px; /* Jarak antara label "PLAYER 1" dan Nama */
-  }
-
-  /* Label "PLAYER 1" */
-  .font-bold.text-white.text-xl {
-    font-size: 12px !important; /* Kecilkan Label */
-    white-space: nowrap; /* Jangan turun baris */
-  }
-
-  /* Nama Player */
-  .text-xl.font-black {
-    font-size: 12px !important; /* Kecilkan Nama */
-    text-align: right;
-    overflow: hidden;
-    text-overflow: ellipsis; /* Titik-titik jika kepanjangan */
-    white-space: nowrap;
-    max-width: 150px; /* Batasi lebar nama */
-  }
-
-  /* Room ID (Angka Kuning) */
-  .text-4xl { font-size: 28px !important; margin-top: 5px !important; }
-
-  /* Input & Button */
+  
+  .lobby-title-img { width: 80%; }
+  
+  /* Perkecil font di HP */
+  .glass-panel p, .glass-panel div { font-size: 14px; }
+  .text-4xl { font-size: 24px !important; }
+  .action-btn { font-size: 16px; padding: 10px; }
   .custom-input { font-size: 16px; padding: 8px; }
-  .action-btn { font-size: 16px; padding: 10px; margin-top: 5px; }
+  
+  /* Nama Player tidak boleh wrap */
+  .flex.justify-between { align-items: center; }
+  .flex.justify-between span { white-space: nowrap; font-size: 13px !important; }
 }
