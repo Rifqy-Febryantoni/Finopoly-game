@@ -89,14 +89,14 @@
 }
 
 /* =========================
-   GLASS PANEL (KARTU WAITING ROOM)
+   GLASS PANEL (WAITING ROOM CARD)
 ========================= */
 .glass-panel {
   background: rgba(95, 166, 215, 1);
   border: 3px solid white;
   border-radius: 20px;
   
-  /* --- SETUP RESPONSIF STANDAR --- */
+  /* Setting Default (Desktop) */
   width: 90%;          
   max-width: 500px;    
   padding: 30px 20px;  
@@ -161,7 +161,11 @@
 .glass-panel .action-btn { font-weight: 900; letter-spacing: 1px; }
 
 .btn-blue { background-color: #5f63d7; }
+.btn-blue:hover { background-color: #4a72c7; transform: translateY(-2px); }
+
 .btn-green { background-color: #5fd778; }
+.btn-green:hover { background-color: #4ac764; transform: translateY(-2px); }
+
 .error-msg { color: #ff6b6b; font-weight: bold; margin-top: 10px; text-shadow: 1px 1px 0 black; }
 
 .player-name { color: #5fd778; text-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
@@ -177,37 +181,48 @@
 
 
 /* =======================================================
-   MEDIA QUERY: HP / MOBILE OPTIMIZATION (AGAR PAS DI LAYAR KECIL)
+   MEDIA QUERY: HP / MOBILE OPTIMIZATION
 ======================================================= */
 
-/* 1. Fix Header (Tablet & Mobile) */
+/* 1. Header adjustment */
 @media (max-width: 768px) {
-  .bar { height: 70px; }
-  .header { padding: 0 15px; }
-  .nav-container { gap: 15px; }
-  .nav-text { font-size: 14px; }
-  .logo { height: 80%; }
+  .bar { height: 60px; } /* Lebih pendek lagi */
+  .header { padding: 0 10px; }
+  .nav-container { gap: 10px; }
+  .nav-text { font-size: 12px; } /* Font menu lebih kecil */
+  .logo { height: 70%; }
 }
 
-/* 2. Fix Tampilan HP Kecil (Waiting Room & Lobby) */
+/* 2. Kartu Lobby & Waiting Room */
 @media (max-width: 600px) {
-  .glass-panel {
-    width: 95%; /* Gunakan hampir seluruh lebar layar */
-    padding: 15px 10px; /* Padding sangat tipis agar konten muat */
+  .lobby-title-img {
+    max-width: 70%; /* Judul gambar lebih kecil */
   }
 
-  /* Kecilkan font teks di dalam kartu */
+  .glass-panel {
+    width: 95%; 
+    padding: 15px 10px; 
+    margin-top: 5px;
+  }
+
+  /* Kecilkan font label di dalam kartu */
   .glass-panel p, 
   .glass-panel div,
   .waiting-message {
-    font-size: 16px !important; /* Paksa font kecil */
+    font-size: 14px !important; /* Paksa kecil */
     margin: 5px 0;
   }
 
-  /* Kecilkan teks Room ID yang biasanya besar */
-  .text-4xl { font-size: 24px !important; }
+  /* KHUSUS ROOM ID: Jangan terlalu besar */
+  .text-4xl { 
+    font-size: 28px !important; 
+    margin-top: 5px !important;
+  }
 
-  /* Kecilkan input & tombol */
-  .custom-input { font-size: 18px; padding: 10px; }
-  .action-btn { font-size: 18px; padding: 12px; }
+  /* Input & Button */
+  .custom-input { font-size: 16px; padding: 8px; }
+  .action-btn { font-size: 16px; padding: 10px; margin-top: 5px; }
+  
+  /* Nama Player */
+  .text-xl { font-size: 16px !important; }
 }

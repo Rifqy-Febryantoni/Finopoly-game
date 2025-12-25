@@ -1,13 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/purity */
 /* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect, useRef } from 'react'; 
 import { useNavigate } from 'react-router-dom';
+
 import { boardTiles } from '../data/boardData';
+
 import { db } from '../firebase';
 import { ref, onValue, update } from "firebase/database";
 import './Lobby.css'; 
 import logo from '../img/Logo.png'; 
+import iascImg from '../img/iasc/iasc.png';
 
 import dice1 from '../img/dice1.png';
 import dice2 from '../img/dice2.png';
@@ -15,6 +19,7 @@ import dice3 from '../img/dice3.png';
 import dice4 from '../img/dice4.png';
 import dice5 from '../img/dice5.png';
 import dice6 from '../img/dice6.png';
+
 
 import bgmFile from '../Audio/game_music.mp3';
 
@@ -42,23 +47,22 @@ const JAIL_QUIZ_POOL = [
   { id: 6, image: '/img/jail/6.png', answer: 'A' },
 ];
 
-const GameBoard = ({ roomId, myRole }) => {
+const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   const navigate = useNavigate();
   
-  const [gameState, setGameState] = useState(null);
-  const [notification, setNotification] = useState(null); 
-  const [statEffect, setStatEffect] = useState({ p1: null, p2: null }); 
+  const [gameState, setGameState] = useState<any>(null);
+  const [notification, setNotification] = useState<any>(null); 
+  const [statEffect, setStatEffect] = useState<any>({ p1: null, p2: null }); 
   const [animDiceValue, setAnimDiceValue] = useState(1); 
   const [isLocalRolling, setIsLocalRolling] = useState(false); 
   const [assetsLoaded, setAssetsLoaded] = useState(false); 
-  const [quizSelection, setQuizSelection] = useState({ selected: null, isRevealed: false }); 
+  const [quizSelection, setQuizSelection] = useState<any>({ selected: null, isRevealed: false }); 
   const [showExitModal, setShowExitModal] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState(null);
+  const [pendingNavigation, setPendingNavigation] = useState<any>(null);
   const audioRef = useRef(new Audio(bgmFile)); 
   const [isMuted, setIsMuted] = useState(false);
 
-  // --- DATA ACCESSORS ---
-  const positions = { p1: 0, p2: 0, ...(gameState?.positions || {}) };
+  const positions = gameState?.positions || { p1: 0, p2: 0 };
   const balances = {
       p1: typeof gameState?.balances?.p1 === 'number' ? gameState.balances.p1 : 1000,
       p2: typeof gameState?.balances?.p2 === 'number' ? gameState.balances.p2 : 1000
@@ -79,20 +83,17 @@ const GameBoard = ({ roomId, myRole }) => {
 
   const diceImages = [null, dice1, dice2, dice3, dice4, dice5, dice6];
 
-
   useEffect(() => {
     const audio = audioRef.current;
     audio.loop = true; 
     audio.volume = 0.3; 
     audio.muted = isMuted;
-
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.catch((error) => {
         console.log("Audio autoplay prevented by browser:", error);
       });
     }
-
     return () => {
       audio.pause();
       audio.currentTime = 0;
@@ -108,34 +109,36 @@ const GameBoard = ({ roomId, myRole }) => {
   useEffect(() => {
     const preloadImages = async () => {
         const imageUrls = [
-            logo,
-            dice1, dice2, dice3, dice4, dice5, dice6,
+            logo, dice1, dice2, dice3, dice4, dice5, dice6,
+            
             ...boardTiles.map(t => t.image),
+            
             ...boardTiles.map(t => t.assetPopup).filter(Boolean),
+            
             ...boardTiles.map(t => t.infoPopup).filter(Boolean),
             ...QUIZ_POOL.map(q => q.image),
             ...JAIL_QUIZ_POOL.map(q => q.image)
         ];
-
         const promises = imageUrls.map((src) => {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 const img = new Image();
                 img.src = src;
-                img.onload = resolve;
+                
+                img.onload = resolve; 
+                
                 img.onerror = resolve; 
             });
         });
-
         await Promise.all(promises);
         setAssetsLoaded(true);
     };
-
     preloadImages();
   }, []);
 
   useEffect(() => {
     if (!roomId) return;
     const roomRef = ref(db, 'rooms/' + roomId);
+    
     const unsubscribe = onValue(roomRef, (snapshot) => {
       const data = snapshot.val();
       if (data) setGameState(data);
@@ -143,15 +146,16 @@ const GameBoard = ({ roomId, myRole }) => {
     return () => unsubscribe();
   }, [roomId]);
 
-  const updateDB = (updates) => {
+  const updateDB = (updates: any) => {
     update(ref(db, 'rooms/' + roomId), updates);
   };
 
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
+    const handleBeforeUnload = (e: any) => {
       if (!winner) { e.preventDefault(); e.returnValue = ''; return ''; }
     };
-    const handlePopState = (e) => {
+    const handlePopState = (e: any) => {
+      
       if (!winner) {
         window.history.pushState(null, "", window.location.href);
         setPendingNavigation('/'); 
@@ -167,13 +171,14 @@ const GameBoard = ({ roomId, myRole }) => {
     };
   }, [winner]);
 
-  const handleNavClick = (targetPath) => {
+  const handleNavClick = (targetPath: any) => {
     if (winner) navigate(targetPath); else { setPendingNavigation(targetPath); setShowExitModal(true); }
   };
 
   const handleConfirmExit = () => {
     if (!winner) {
         const opponentKey = myRole === 1 ? 'p2' : 'p1';
+        
         const opponentName = playerNames[opponentKey] || "Opponent";
         updateDB({ winner: opponentName }); 
     }
@@ -186,17 +191,18 @@ const GameBoard = ({ roomId, myRole }) => {
     setPendingNavigation(null);
   };
 
-  const showNotification = (message, type = 'info', duration = 3000) => {
+  const showNotification = (message: any, type = 'info', duration = 3000) => {
     setNotification({ message, type });
     if (duration > 0) setTimeout(() => setNotification(null), duration);
   };
 
-  const triggerStatEffect = (playerKey, type) => {
-    setStatEffect(prev => ({ ...prev, [playerKey]: type }));
-    setTimeout(() => setStatEffect(prev => ({ ...prev, [playerKey]: null })), 1000);
+  const triggerStatEffect = (playerKey: any, type: any) => {
+    setStatEffect((prev: any) => ({ ...prev, [playerKey]: type }));
+    setTimeout(() => setStatEffect((prev: any) => ({ ...prev, [playerKey]: null })), 1000);
   };
 
-  const calculateBoostedAmount = (baseAmount, playerKey) => {
+  const calculateBoostedAmount = (baseAmount: any, playerKey: any) => {
+    
     const level = growthBoosts[playerKey] || 0; 
     if (level === 0) return baseAmount;
     return Math.floor(baseAmount * (1 + (0.5 * level)));
@@ -206,6 +212,7 @@ const GameBoard = ({ roomId, myRole }) => {
     if (!gameState) return;
     if (turn === myRole && phase === 'IDLE' && !winner) {
         const currentPlayerKey = turn === 1 ? 'p1' : 'p2';
+        
         if (jailedPlayers[currentPlayerKey]) {
             updateDB({ phase: 'JAIL_DECISION' });
         }
@@ -216,11 +223,9 @@ const GameBoard = ({ roomId, myRole }) => {
     if (turn !== myRole) return; 
     setIsLocalRolling(true);
     setNotification(null); 
-
     const shuffleInterval = setInterval(() => {
       setAnimDiceValue(Math.floor(Math.random() * 6) + 1);
     }, 100);
-
     setTimeout(() => {
       clearInterval(shuffleInterval);
       const finalRolled = Math.floor(Math.random() * 6) + 1;
@@ -229,26 +234,24 @@ const GameBoard = ({ roomId, myRole }) => {
     }, 1000); 
   };
 
-  const movePlayerSmoothly = (stepsRemaining) => {
+  const movePlayerSmoothly = (stepsRemaining: any) => {
     updateDB({ phase: 'MOVING' }); 
     setIsLocalRolling(false);
-    
     const currentPlayerKey = turn === 1 ? 'p1' : 'p2';
-    let trackerPos = positions[currentPlayerKey] || 0; 
     
-    const performStep = (remaining) => {
+    let trackerPos = positions[currentPlayerKey] || 0; 
+    const performStep = (remaining: any) => {
         if (remaining <= 0) {
             updateDB({ diceValue: stepsRemaining }); 
             checkTileInteraction(trackerPos);
             return;
         }
-        
         trackerPos = (trackerPos + 1) % 32;
-        
         if (trackerPos === 0) { 
-             const updates = {};
+             const updates: any = {};
              const baseBonus = 100;
              const finalBonus = calculateBoostedAmount(baseBonus, currentPlayerKey);
+             
              const currentBalance = Number(balances[currentPlayerKey]) || 0;
              updates[`balances/${currentPlayerKey}`] = currentBalance + finalBonus;
              updates[`positions/${currentPlayerKey}`] = trackerPos;
@@ -258,22 +261,21 @@ const GameBoard = ({ roomId, myRole }) => {
         } else {
              updateDB({ [`positions/${currentPlayerKey}`]: trackerPos });
         }
-
         setTimeout(() => performStep(remaining - 1), 300);
     };
-    
     updateDB({ diceValue: stepsRemaining }); 
     performStep(stepsRemaining);
   };
 
-  const handleTileClick = (targetIndex) => {
+  const handleTileClick = (targetIndex: any) => {
     if (phase !== 'TRAVEL_SELECT' || turn !== myRole) return;
     const currentPlayerKey = turn === 1 ? 'p1' : 'p2';
     updateDB({ phase: 'MOVING' });
-    let updates = { [`positions/${currentPlayerKey}`]: targetIndex };
+    let updates: any = { [`positions/${currentPlayerKey}`]: targetIndex };
     if (targetIndex === 0) {
         const baseBonus = 100;
         const finalBonus = calculateBoostedAmount(baseBonus, currentPlayerKey);
+        
         const currentBalance = Number(balances[currentPlayerKey]) || 0;
         updates[`balances/${currentPlayerKey}`] = currentBalance + finalBonus;
         showNotification(`Terbang ke Start! +Rp ${finalBonus}`, 'success');
@@ -283,13 +285,14 @@ const GameBoard = ({ roomId, myRole }) => {
     setTimeout(() => checkTileInteraction(targetIndex), 500);
   };
 
-  const checkTileInteraction = (tileIndex) => {
+  const checkTileInteraction = (tileIndex: any) => {
+    
     const tile = boardTiles[tileIndex];
     const currentPlayerKey = turn === 1 ? 'p1' : 'p2';
+    
     const owner = ownership[tileIndex];
     const basePrice = (tileIndex + 1) * 50;
-
-    let updates = {};
+    let updates: any = {};
 
     if (tile.type === 'TRAVEL' || tile.label === 'Travel') { updates['phase'] = 'TRAVEL_SELECT'; }
     else if (tile.type === 'JAIL' || tile.label === 'Jail') {
@@ -301,10 +304,12 @@ const GameBoard = ({ roomId, myRole }) => {
     else if (tile.type === 'START') { endTurn(updates); return; }
     else if (tile.type === 'GROWTH') { updates = { phase: 'INTERACTION', interactionData: { type: 'GROWTH' } }; }
     else if (tile.type === 'TAX') {
+        
         const tax = Math.floor(balances[currentPlayerKey] * 0.10);
         updates = { phase: 'INTERACTION', interactionData: { type: 'TAX', amount: tax } };
     }
     else if (tile.type === 'INTEREST') {
+        
         const baseInterest = Math.floor(balances[currentPlayerKey] * 0.10);
         const finalInterest = calculateBoostedAmount(baseInterest, currentPlayerKey);
         updates = { phase: 'INTERACTION', interactionData: { type: 'INTEREST', amount: finalInterest, base: baseInterest } };
@@ -319,6 +324,7 @@ const GameBoard = ({ roomId, myRole }) => {
         } else {
             const rent = Math.floor(basePrice * 0.2);
             const acquire = basePrice * 2;
+            
             if (balances[currentPlayerKey] < rent) {
                 handleBankruptcy(currentPlayerKey);
                 return;
@@ -339,14 +345,14 @@ const GameBoard = ({ roomId, myRole }) => {
 
   const endTurn = (extraUpdates = {}) => {
     const nextTurn = turn === 1 ? 2 : 1;
-    const updates = { ...extraUpdates, phase: 'IDLE', interactionData: null, turn: nextTurn, diceValue: 1 };
-    updateDB(updates);
+    updateDB({ ...extraUpdates, phase: 'IDLE', interactionData: null, turn: nextTurn, diceValue: 1 });
   };
 
-  // --- INTERACTION HANDLERS ---
+  // --- HANDLERS ---
   const handleTakeBoost = () => {
     if (turn !== myRole) return;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
+    
     updateDB({ [`growthBoosts/${playerKey}`]: growthBoosts[playerKey] + 1 });
     showNotification("Growth Boost Bertambah!", 'success');
     endTurn();
@@ -354,6 +360,7 @@ const GameBoard = ({ roomId, myRole }) => {
   const handlePayTax = () => {
     if (turn !== myRole) return;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
+    
     updateDB({ [`balances/${playerKey}`]: Math.max(0, balances[playerKey] - interactionData.amount) });
     triggerStatEffect(playerKey, 'LOSS');
     endTurn();
@@ -362,14 +369,32 @@ const GameBoard = ({ roomId, myRole }) => {
     if (turn !== myRole) return;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
     const amount = interactionData.amount || interactionData.dividend;
+    
     updateDB({ [`balances/${playerKey}`]: balances[playerKey] + amount });
     triggerStatEffect(playerKey, 'GAIN');
     endTurn();
+  };
+  const handleQuizAnswer = (choice: any) => {
+    if (turn !== myRole) return;
+    const isCorrect = choice === interactionData.correctAnswer;
+    handleQuizResult(isCorrect);
+  };
+  const handleQuizResult = (isCorrect: any) => {
+    const playerKey = myRole === 1 ? 'p1' : 'p2';
+    if (isCorrect) {
+        updateDB({ [`positions/${playerKey}`]: 24, phase: 'TRAVEL_SELECT' }); 
+        showNotification("BENAR! Silakan Pilih Tujuan", 'success');
+    } else {
+        updateDB({ [`positions/${playerKey}`]: 8, [`jailedPlayers/${playerKey}`]: true }); 
+        showNotification("SALAH! Masuk Penjara.", 'error');
+        endTurn();
+    }
   };
   const handleBuyAsset = () => {
     if (turn !== myRole) return;
     const { price, tileIndex } = interactionData;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
+    
     updateDB({ [`balances/${playerKey}`]: balances[playerKey] - price, [`ownership/${tileIndex}`]: playerKey });
     triggerStatEffect(playerKey, 'LOSS');
     endTurn();
@@ -379,6 +404,7 @@ const GameBoard = ({ roomId, myRole }) => {
     const playerKey = myRole === 1 ? 'p1' : 'p2';
     const opponentKey = myRole === 1 ? 'p2' : 'p1';
     const { rent } = interactionData;
+    
     updateDB({ [`balances/${playerKey}`]: balances[playerKey] - rent, [`balances/${opponentKey}`]: balances[opponentKey] + rent });
     triggerStatEffect(playerKey, 'LOSS');
     triggerStatEffect(opponentKey, 'GAIN');
@@ -390,7 +416,9 @@ const GameBoard = ({ roomId, myRole }) => {
     const playerKey = myRole === 1 ? 'p1' : 'p2';
     const opponentKey = myRole === 1 ? 'p2' : 'p1';
     updateDB({ 
+        
         [`balances/${playerKey}`]: balances[playerKey] - acquirePrice, 
+        
         [`balances/${opponentKey}`]: balances[opponentKey] + acquirePrice,
         [`ownership/${tileIndex}`]: playerKey 
     });
@@ -421,46 +449,13 @@ const GameBoard = ({ roomId, myRole }) => {
     const randomQuiz = JAIL_QUIZ_POOL[Math.floor(Math.random() * JAIL_QUIZ_POOL.length)];
     updateDB({ phase: 'JAIL_QUIZ', interactionData: { type: 'JAIL_QUIZ_POPUP', image: randomQuiz.image, correctAnswer: randomQuiz.answer } });
   };
-  const handleBankruptcy = (bankruptPlayer) => {
-      const winnerKey = bankruptPlayer === 'p1' ? 'p2' : 'p1';
-      const winnerName = playerNames[winnerKey];
-      updateDB({ winner: winnerName });
-  };
-
-  
-  const handleOptionClick = (choice, type) => { 
-    if (quizSelection.isRevealed || turn !== myRole) return; 
-
-    setQuizSelection({ selected: choice, isRevealed: true });
-
-    setTimeout(() => {
-        if (type === 'NORMAL') {
-            processQuizAnswer(choice);
-        } else {
-            processJailQuizAnswer(choice);
-        }
-        setQuizSelection({ selected: null, isRevealed: false });
-    }, 2000);
-  };
-
-  const processQuizAnswer = (choice) => {
-    const isCorrect = choice === interactionData.correctAnswer;
-    const playerKey = myRole === 1 ? 'p1' : 'p2';
-    if (isCorrect) {
-        updateDB({ [`positions/${playerKey}`]: 24, phase: 'TRAVEL_SELECT' }); 
-        showNotification("BENAR! Silakan Pilih Tujuan", 'success');
-    } else {
-        updateDB({ [`positions/${playerKey}`]: 8, [`jailedPlayers/${playerKey}`]: true }); 
-        showNotification("SALAH! Masuk Penjara.", 'error');
-        endTurn();
-    }
-  };
-
-  const processJailQuizAnswer = (choice) => {
+  const handleJailQuizAnswer = (choice: any) => {
+    if (turn !== myRole) return;
     const isCorrect = choice === interactionData.correctAnswer;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
     if (isCorrect) {
         const roll = Math.floor(Math.random() * 6) + 1;
+        
         const newPos = (positions[playerKey] + roll) % 32;
         updateDB({ [`jailedPlayers/${playerKey}`]: false, [`positions/${playerKey}`]: newPos, diceValue: roll });
         showNotification("Bebas & Jalan " + roll, 'success');
@@ -470,27 +465,37 @@ const GameBoard = ({ roomId, myRole }) => {
         endTurn();
     }
   };
+  const handleBankruptcy = (bankruptPlayer: any) => {
+      const winnerKey = bankruptPlayer === 'p1' ? 'p2' : 'p1';
+      
+      const winnerName = playerNames[winnerKey];
+      updateDB({ winner: winnerName });
+  };
 
-  const getQuizButtonClass = (option) => {
+  const handleOptionClick = (choice: any, type: any) => { 
+    if (quizSelection.isRevealed || turn !== myRole) return; 
+    setQuizSelection({ selected: choice, isRevealed: true });
+    setTimeout(() => {
+        if (type === 'NORMAL') {
+            handleQuizAnswer(choice);
+        } else {
+            handleJailQuizAnswer(choice);
+        }
+        setQuizSelection({ selected: null, isRevealed: false });
+    }, 2000);
+  };
+
+  const getQuizButtonClass = (option: any) => {
     if (!quizSelection.isRevealed) {
         return "bg-white hover:bg-gray-100 text-gray-800 border-2 border-gray-200 py-3 rounded-xl font-black text-xl shadow-sm transition-all transform hover:scale-105 active:scale-95";
     }
-
     const correct = interactionData.correctAnswer;
-    
-    if (option === correct) {
-        return "bg-green-500 text-white border-2 border-green-600 py-3 rounded-xl font-black text-xl shadow-md scale-105";
-    }
-
-    if (option === quizSelection.selected && option !== correct) {
-        return "bg-red-500 text-white border-2 border-red-600 py-3 rounded-xl font-black text-xl shadow-md opacity-80";
-    }
-
+    if (option === correct) return "bg-green-500 text-white border-2 border-green-600 py-3 rounded-xl font-black text-xl shadow-md scale-105";
+    if (option === quizSelection.selected && option !== correct) return "bg-red-500 text-white border-2 border-red-600 py-3 rounded-xl font-black text-xl shadow-md opacity-80";
     return "bg-gray-200 text-gray-400 border-2 border-gray-300 py-3 rounded-xl font-black text-xl opacity-50 cursor-not-allowed";
   };
 
-
-  const getGridPosition = (index) => {
+  const getGridPosition = (index: any) => {
     if (index <= 8) return { row: index + 1, col: 9 };
     if (index <= 16) return { row: 9, col: 9 - (index - 8) };
     if (index <= 24) return { row: 9 - (index - 16), col: 1 };
@@ -498,7 +503,8 @@ const GameBoard = ({ roomId, myRole }) => {
     return { row: 1, col: 9 };
   };
 
-  const getTileStyle = (tileIndex) => {
+  const getTileStyle = (tileIndex: any) => {
+    
     const owner = ownership[tileIndex];
     let finalClass = ""; 
     if (owner === 'p1') finalClass = 'border-blue-600 border-4 z-20'; 
@@ -507,9 +513,11 @@ const GameBoard = ({ roomId, myRole }) => {
     return finalClass;
   };
 
-  const getStatClass = (playerKey) => {
-    let base = "flex flex-col items-center justify-center p-1 md:p-2 rounded-lg md:rounded-xl border-2 md:border-4 shadow-lg transition-all duration-500 w-20 md:w-36 ";
+  const getStatClass = (playerKey: any) => {
+    // PERBAIKAN: UKURAN LEBIH KECIL (w-16) DI HP
+    let base = "flex flex-col items-center justify-center p-1 md:p-2 rounded-lg md:rounded-xl border-2 md:border-4 shadow-lg transition-all duration-500 w-16 md:w-36 ";
     const effect = statEffect[playerKey];
+    
     const isJailed = jailedPlayers[playerKey];
     const isTurn = (playerKey === 'p1' && turn === 1) || (playerKey === 'p2' && turn === 2);
     if (effect === 'GAIN') return base + "bg-green-500 border-green-300 text-white scale-110 shadow-[0_0_20px_#22c55e] z-50";
@@ -531,7 +539,7 @@ const GameBoard = ({ roomId, myRole }) => {
         <div className="game-bg-container flex flex-col items-center justify-center">
             <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-white mb-4"></div>
             <h2 className="text-white text-2xl font-black uppercase tracking-widest">
-                {!assetsLoaded ? "MEMUAT ASET GAME..." : "MENUNGGU LAWAN..."}
+                {!assetsLoaded ? "MEMUAT ASET..." : "MENUNGGU LAWAN..."}
             </h2>
         </div>
       );
@@ -545,19 +553,16 @@ const GameBoard = ({ roomId, myRole }) => {
       return (
         <div className="game-bg-container flex flex-col items-center justify-center p-4 text-center">
             <div className="bg-white/90 backdrop-blur-md p-10 rounded-3xl shadow-2xl border-4 border-white max-w-2xl w-full animate-zoomIn">
-                
                 <h1 className={`text-5xl font-black mb-4 uppercase ${imWinner ? 'text-green-600' : 'text-blue-500'}`}>
                     {imWinner ? "KAMU MENANG!" : "BELUM BERUNTUNG!"}
                 </h1>
-                
                 <p className="text-xl font-bold text-gray-600 mb-8">
                     {imWinner ? "Selamat! Pertahankan ya." : "Tetap Semangat! Coba lagi lain kali ya."}
                 </p>
-
-                <button 
-                    onClick={() => window.location.reload()} 
-                    className="bg-gray-800 text-white px-8 py-3 rounded-full font-bold hover:bg-gray-700 transition-all shadow-lg hover:scale-105"
-                >
+                <div className="mb-8 flex justify-center">
+                    <img src={iascImg} alt="IASC Logo" className="h-40 object-contain drop-shadow-md animate-bounce" />
+                </div>
+                <button onClick={() => window.location.reload()} className="bg-gray-800 text-white px-8 py-3 rounded-full font-bold hover:bg-gray-700 transition-all shadow-lg hover:scale-105">
                     KEMBALI KE MENU
                 </button>
             </div>
@@ -573,8 +578,7 @@ const GameBoard = ({ roomId, myRole }) => {
         <img src={logo} alt="Finopoly Logo" className="logo" />
         <nav className="nav-container">
             <span className="nav-text" onClick={() => handleNavClick('/')}>HOME</span>
-            <span className="nav-text" onClick={() => handleNavClick('/introduction')}>INTRODUCTION</span>
-
+            <span className="nav-text" onClick={() => handleNavClick('/introduction')}>INTRO</span>
             <button onClick={toggleMute} className="text-2xl text-white hover:text-yellow-400 transition-colors ml-4" title="Toggle Music">
                {isMuted ? "🔇" : "🔊"}
             </button>
@@ -584,11 +588,15 @@ const GameBoard = ({ roomId, myRole }) => {
       <main className="lobby-content">
         <div className="relative w-full max-w-3xl mx-auto p-4 md:scale-100">
           <div className="grid grid-cols-9 grid-rows-9 gap-1 bg-gray-800 p-2 rounded-lg aspect-square">
+            
             {boardTiles.map((tile, i) => {
               const pos = getGridPosition(i);
+              
               const isP1Here = positions.p1 === i;
+              
               const isP2Here = positions.p2 === i;
               const borderClass = getTileStyle(i);
+              
               const owner = ownership[i];
               let overlayClass = "";
               if (owner === 'p1') overlayClass = "bg-blue-600/45"; 
@@ -609,19 +617,27 @@ const GameBoard = ({ roomId, myRole }) => {
 
             <div className="bg-white col-start-2 col-end-9 row-start-2 row-end-9 m-1 rounded-lg flex flex-col justify-between shadow-inner relative overflow-hidden">
                 <div className="w-full flex justify-between items-start p-2 z-10 border-b border-gray-100 bg-gray-50 bg-opacity-80">
-                <div className={getStatClass('p1')}>
-                    <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p1}</span>
-                    <span className="text-xs md:text-lg font-black">Rp {balances.p1}</span>
-                    {growthBoosts.p1 > 0 && <span className="text-[8px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p1}</span>}
-                    {jailedPlayers.p1 && <span className="text-[8px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
-                </div>
-
-                <div className={getStatClass('p2')}>
-                    <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p2}</span>
-                    <span className="text-xs md:text-lg font-black">Rp {balances.p2}</span>
-                    {growthBoosts.p2 > 0 && <span className="text-[8px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p2}</span>}
-                    {jailedPlayers.p2 && <span className="text-[8px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
-                </div>
+                    <div className={getStatClass('p1')}>
+                        {/* FONT SANGAT KECIL DI HP AGAR MUAT */}
+                        
+                        <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p1}</span>
+                        
+                        <span className="text-[10px] md:text-lg font-black">Rp {balances.p1}</span>
+                        
+                        {growthBoosts.p1 > 0 && <span className="text-[8px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p1}</span>}
+                        
+                        {jailedPlayers.p1 && <span className="text-[8px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
+                    </div>
+                    <div className={getStatClass('p2')}>
+                        
+                        <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p2}</span>
+                        
+                        <span className="text-[10px] md:text-lg font-black">Rp {balances.p2}</span>
+                        
+                        {growthBoosts.p2 > 0 && <span className="text-[8px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p2}</span>}
+                        
+                        {jailedPlayers.p2 && <span className="text-[8px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
+                    </div>
                 </div>
 
                 <div className="flex-1 flex flex-col items-center justify-center relative p-2">
@@ -631,106 +647,102 @@ const GameBoard = ({ roomId, myRole }) => {
                             {notification.message}
                         </div>
                     )}
-                {(phase === 'IDLE' || phase === 'MOVING') && !winner && (
-                    <div className="flex flex-col items-center justify-center gap-2 md:gap-4"> 
-                        
-                        <div className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest">
-                            {turn === myRole ? "GILIRAN KAMU" : `MENUNGGU ${turn === 1 ? playerNames.p1 : playerNames.p2}...`}
-                        </div>
-                        
-                        <div className={`w-20 h-20 md:w-40 md:h-40 bg-white border-1 border-gray-300 rounded-2xl md:rounded-3xl flex items-center justify-center shadow-lg ${isLocalRolling ? 'animate-shake' : ''}`}>
-                            <img src={diceImages[displayDice]} alt={`Dice ${displayDice}`} className="w-full h-full object-contain p-2" />
-                        </div>
 
-                        {turn === myRole && (
-                            <button onClick={handleRollDice} disabled={isLocalRolling} 
-                                className="px-4 py-2 md:px-8 md:py-3 rounded-full font-bold shadow-lg text-white bg-blue-600 hover:bg-blue-700 transition-all transform active:scale-95 text-xs md:text-base">
-                                {isLocalRolling ? 'ROLLING...' : 'ROLL DICE'}
-                            </button>
-                        )}
-                    </div>
-                )}
+                    {(phase === 'IDLE' || phase === 'MOVING') && !winner && (
+                        <div className="flex flex-col items-center justify-center gap-1 md:gap-4">
+                            <div className="text-[9px] md:text-sm font-bold text-gray-400 uppercase tracking-widest">
+                                
+                                {turn === myRole ? "GILIRAN KAMU" : `MENUNGGU ${turn === 1 ? playerNames.p1 : playerNames.p2}...`}
+                            </div>
+                            {/* DADU SANGAT KECIL (w-14 / 56px) DI HP */}
+                            <div className={`w-14 h-14 md:w-40 md:h-40 bg-white border-1 border-gray-300 rounded-xl md:rounded-3xl flex items-center justify-center shadow-lg ${isLocalRolling ? 'animate-shake' : ''}`}>
+                                <img src={diceImages[displayDice]} alt={`Dice ${displayDice}`} className="w-full h-full object-contain p-2" />
+                            </div>
+                            {turn === myRole && (
+                                <button onClick={handleRollDice} disabled={isLocalRolling} 
+                                    className="px-4 py-1 md:px-8 md:py-3 rounded-full font-bold shadow-lg text-white bg-blue-600 hover:bg-blue-700 transition-all transform active:scale-95 text-[10px] md:text-base">
+                                    {isLocalRolling ? '...' : 'ROLL DICE'}
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     {phase === 'TRAVEL_SELECT' && (
                         <div className="text-center animate-pulse">
-                            <div className="text-4xl mb-2">✈️</div>
-                            <h2 className="text-xl font-bold text-yellow-600">TRAVEL MODE</h2>
-                            <p className="text-sm text-gray-500">Klik kotak tujuan di papan!</p>
+                            <div className="text-2xl md:text-4xl mb-2">✈️</div>
+                            <h2 className="text-sm md:text-xl font-bold text-yellow-600">TRAVEL MODE</h2>
+                            <p className="text-[10px] md:text-sm text-gray-500">Klik kotak tujuan!</p>
                         </div>
                     )}
 
                     {phase === 'INTERACTION' && interactionData && !winner && (
-                        <div className="w-full max-w-md px-2 text-center animate-fadeIn">
+                        <div className="w-full max-w-[90%] md:max-w-md px-1 text-center animate-fadeIn">
                             {interactionData.type === 'GROWTH' && (
                                 <>
-                                    <h3 className="text-2xl font-bold mb-1 text-purple-600">GROWTH BOOST</h3>
-                                    <div className="text-5xl mb-4">🚀</div>
-                                    <p className="text-sm font-medium text-gray-600 mb-6">Setiap pendapatanmu akan bertambah <span className="font-bold text-green-600">50%</span>!</p>
-                                    {turn === myRole ? <button onClick={handleTakeBoost} className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 shadow-lg">AMBIL</button> : <p className="text-gray-400">Menunggu lawan...</p>}
+                                    <h3 className="text-sm md:text-2xl font-bold mb-1 text-purple-600">GROWTH BOOST</h3>
+                                    <div className="text-2xl md:text-5xl mb-2">🚀</div>
+                                    <p className="text-[10px] md:text-sm font-medium text-gray-600 mb-4">Pendapatan +<span className="font-bold text-green-600">50%</span>!</p>
+                                    {turn === myRole ? <button onClick={handleTakeBoost} className="w-full bg-purple-600 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-bold hover:bg-purple-700 shadow-lg text-xs md:text-base">AMBIL</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
                                 </>
                             )}
                             {interactionData.type === 'TAX' && (
                                 <>
-                                    <h3 className="text-2xl font-bold mb-1 text-red-600">PAJAK</h3>
-                                    <p className="text-4xl font-black text-gray-800 mb-6">- {interactionData.amount}</p>
-                                    {turn === myRole ? <button onClick={handlePayTax} className="w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 shadow-lg">BAYAR</button> : <p className="text-gray-400">Menunggu lawan...</p>}
+                                    <h3 className="text-sm md:text-2xl font-bold mb-1 text-red-600">PAJAK</h3>
+                                    <p className="text-xl md:text-4xl font-black text-gray-800 mb-4">- {interactionData.amount}</p>
+                                    {turn === myRole ? <button onClick={handlePayTax} className="w-full bg-red-600 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-bold hover:bg-red-700 shadow-lg text-xs md:text-base">BAYAR</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
                                 </>
                             )}
                             {interactionData.type === 'INTEREST' && (
                                 <>
-                                    <h3 className="text-2xl font-bold mb-1 text-green-600">BUNGA</h3>
-                                    <p className="text-4xl font-black text-gray-800 mb-6">+ {interactionData.amount}</p>
-                                    {interactionData.base < interactionData.amount && <p className="text-xs text-green-500 mb-2 font-bold">(Termasuk Boost)</p>}
-                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 shadow-lg animate-pulse">KLAIM</button> : <p className="text-gray-400">Menunggu lawan...</p>}
+                                    <h3 className="text-sm md:text-2xl font-bold mb-1 text-green-600">BUNGA</h3>
+                                    <p className="text-xl md:text-4xl font-black text-gray-800 mb-4">+ {interactionData.amount}</p>
+                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-bold hover:bg-green-700 shadow-lg animate-pulse text-xs md:text-base">KLAIM</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
                                 </>
                             )}
                             {interactionData.type === 'ASSET_OWNED' && (
                                 <>
-                                    <div className="text-xs font-bold text-red-500 uppercase mb-4">MILIK LAWAN</div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="bg-red-50 p-3 rounded-xl border border-red-100">
-                                            <div className="text-[10px] font-bold text-gray-400">BIAYA SEWA</div>
-                                            <div className="text-lg font-bold text-red-600 mb-2">{interactionData.rent}</div>
-                                            {turn === myRole ? <button onClick={handlePayRent} className="w-full bg-red-600 text-white py-1 rounded text-xs font-bold">BAYAR</button> : <p className="text-gray-400 text-xs">Waiting...</p>}
+                                    <div className="text-[8px] md:text-[10px] font-bold text-red-500 uppercase mb-2">MILIK LAWAN</div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="bg-red-50 p-2 rounded-lg border border-red-100">
+                                            <div className="text-[8px] font-bold text-gray-400">SEWA</div>
+                                            <div className="text-xs md:text-lg font-bold text-red-600 mb-1">{interactionData.rent}</div>
+                                            {turn === myRole ? <button onClick={handlePayRent} className="w-full bg-red-600 text-white py-1 rounded text-[8px] font-bold">BAYAR</button> : <p className="text-gray-400 text-[8px]">Waiting...</p>}
                                         </div>
-                                        <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-100">
-                                            <div className="text-[10px] font-bold text-gray-400">AKUISISI</div>
-                                            <div className="text-lg font-bold text-yellow-600 mb-2">{interactionData.acquirePrice}</div>
-                                            {turn === myRole ? <button onClick={handleAcquireAsset} disabled={balances[turn === 1 ? 'p1' : 'p2'] < interactionData.acquirePrice} className={`w-full text-white py-1 rounded text-xs font-bold ${balances[turn === 1 ? 'p1' : 'p2'] < interactionData.acquirePrice ? 'bg-gray-300' : 'bg-yellow-500'}`}>AMBIL</button> : <p className="text-gray-400 text-xs">Waiting...</p>}
+                                        <div className="bg-yellow-50 p-2 rounded-lg border border-yellow-100">
+                                            <div className="text-[8px] font-bold text-gray-400">AKUISISI</div>
+                                            <div className="text-xs md:text-lg font-bold text-yellow-600 mb-1">{interactionData.acquirePrice}</div>
+                                            
+                                            {turn === myRole ? <button onClick={handleAcquireAsset} disabled={balances[turn === 1 ? 'p1' : 'p2'] < interactionData.acquirePrice} className={`w-full text-white py-1 rounded text-[8px] font-bold ${balances[turn === 1 ? 'p1' : 'p2'] < interactionData.acquirePrice ? 'bg-gray-300' : 'bg-yellow-500'}`}>AMBIL</button> : <p className="text-gray-400 text-[8px]">Waiting...</p>}
                                         </div>
                                     </div>
                                 </>
                             )}
                             {interactionData.type === 'ASSET_DIVIDEND' && (
                                 <>
-                                    <h3 className="text-xl font-bold text-green-600 mb-2">DIVIDEN</h3>
-                                    <p className="text-4xl font-black text-gray-800 mb-6">+ {interactionData.dividend}</p>
-                                    {interactionData.base < interactionData.dividend && <p className="text-xs text-green-500 mb-2 font-bold">(Termasuk Boost)</p>}
-                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg">AMBIL</button> : <p className="text-gray-400">Menunggu lawan...</p>}
+                                    <h3 className="text-sm md:text-xl font-bold text-green-600 mb-2">DIVIDEN</h3>
+                                    <p className="text-xl md:text-4xl font-black text-gray-800 mb-4">+ {interactionData.dividend}</p>
+                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-bold shadow-lg text-xs md:text-base">AMBIL</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
                                 </>
                             )}
                         </div>
                     )}
 
                     {phase === 'JAIL_DECISION' && (
-                        <div className="w-full max-w-sm animate-fadeIn">
-                            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">👮 PILIHAN PENJARA</h2>
+                        <div className="w-full max-w-[90%] animate-fadeIn">
+                            <h2 className="text-sm md:text-xl font-bold text-gray-800 mb-2 md:mb-4 text-center">👮 PILIHAN PENJARA</h2>
                             {turn === myRole ? (
                                 <div className="flex gap-2 justify-center">
-                                    <button onClick={handleJailRoll} disabled={isLocalRolling} className="flex-1 bg-gray-800 text-white p-3 rounded-lg font-bold hover:bg-gray-700 text-sm">
-                                        ROLL (1/6)
-                                    </button>
-                                    <button onClick={handleJailQuizInit} className="flex-1 bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 text-sm">
-                                        KUIS HUKUM
-                                    </button>
+                                    <button onClick={handleJailRoll} disabled={isLocalRolling} className="flex-1 bg-gray-800 text-white p-2 rounded-lg font-bold hover:bg-gray-700 text-[10px] md:text-sm">ROLL (1/6)</button>
+                                    <button onClick={handleJailQuizInit} className="flex-1 bg-blue-600 text-white p-2 rounded-lg font-bold hover:bg-blue-700 text-[10px] md:text-sm">KUIS HUKUM</button>
                                 </div>
-                            ) : <p className="text-center text-gray-400">Menunggu lawan...</p>}
+                            ) : <p className="text-center text-gray-400 text-[10px]">Menunggu lawan...</p>}
                         </div>
                     )}
                 </div>
 
                 <div className="w-full text-center py-1 bg-gray-50 border-t border-gray-100">
-                    <span className="text-[10px] text-gray-400 font-mono">
+                    <span className="text-[8px] md:text-[10px] text-gray-400 font-mono">
+                        
                         Posisi: {playerNames.p1}({positions.p1}) | {playerNames.p2}({positions.p2})
                     </span>
                 </div>
@@ -739,37 +751,34 @@ const GameBoard = ({ roomId, myRole }) => {
         </div>
       </main>
 
-      <footer className="bar footer">
-         <span style={{fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontWeight: 'bold', fontSize: '14px', color: 'white'}}>FINOPOLY © 2025</span>
-      </footer>
-
       {showExitModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
-            <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md text-center border-4 border-red-500 animate-bounce-small">
-                <div className="text-6xl mb-4">⚠️</div>
-                <h2 className="text-2xl font-black text-red-600 mb-2 uppercase">TUNGGU! JANGAN KELUAR!</h2>
-                <p className="text-gray-700 font-bold mb-6">
-                    Jika kamu keluar, maka <span className="text-red-600 font-black">AKAN DIANGGAP MENYERAH!</span> dan Lawan Kamu akan Otomatis Menang.
+            <div className="bg-white p-4 md:p-8 rounded-2xl shadow-2xl max-w-xs md:max-w-md text-center border-4 border-red-500 animate-bounce-small">
+                <div className="text-4xl md:text-6xl mb-2 md:mb-4">⚠️</div>
+                <h2 className="text-lg md:text-2xl font-black text-red-600 mb-2 uppercase">TUNGGU! JANGAN KELUAR!</h2>
+                <p className="text-gray-700 font-bold mb-4 md:mb-6 text-xs md:text-base">
+                    Jika kamu keluar, maka <span className="text-red-600 font-black">AKAN DIANGGAP MENYERAH!</span>
                 </p>
-                <div className="flex gap-4 justify-center">
-                    <button onClick={handleCancelExit} className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-xl font-bold transition-transform transform hover:scale-105">CANCEL</button>
-                    <button onClick={handleConfirmExit} className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold transition-transform transform hover:scale-105 shadow-lg">IYA, AKU MENYERAH</button>
+                <div className="flex gap-2 md:gap-4 justify-center">
+                    <button onClick={handleCancelExit} className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-base">CANCEL</button>
+                    <button onClick={handleConfirmExit} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-base">MENYERAH</button>
                 </div>
             </div>
         </div>
       )}
 
+      {/* --- POPUPS INTERAKSI (GAMBAR DIPERKECIL DI HP) --- */}
       {phase === 'INTERACTION' && interactionData?.type === 'INFO_POPUP' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-md animate-fadeIn">
-            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-cyan-400">
-                <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-cyan-600 text-white px-6 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-sm">INFOGRAFIS</div>
+            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-cyan-400">
+                <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-cyan-600 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">INFOGRAFIS</div>
                 <div className="mt-4 rounded-xl overflow-hidden border border-gray-200">
-                    <img src={interactionData.content} alt="Informasi Keuangan" className="w-full h-auto object-contain max-h-[70vh]" />
+                    <img src={interactionData.content} alt="Informasi Keuangan" className="w-full h-auto object-contain max-h-[30vh] md:max-h-[70vh]" />
                 </div>
                 <div className="mt-4 flex justify-center">
                     {turn === myRole ? (
-                        <button onClick={() => endTurn()} className="bg-cyan-600 hover:bg-cyan-700 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg transition-transform transform hover:scale-105 active:scale-95">MENGERTI</button>
-                    ) : <div className="text-white bg-gray-800 px-4 py-2 rounded-lg font-bold text-sm bg-opacity-80">Menunggu lawan membaca info...</div>}
+                        <button onClick={() => endTurn()} className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 md:px-10 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-lg shadow-lg transition-transform transform hover:scale-105 active:scale-95">MENGERTI</button>
+                    ) : <div className="text-white bg-gray-800 px-4 py-2 rounded-lg font-bold text-[10px] bg-opacity-80">Menunggu lawan membaca info...</div>}
                 </div>
             </div>
         </div>
@@ -777,29 +786,31 @@ const GameBoard = ({ roomId, myRole }) => {
 
       {phase === 'INTERACTION' && interactionData?.type === 'ASSET_BUY' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-md animate-fadeIn">
-            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-pink-500">
-                <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-pink-500 text-white px-6 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-sm">SEKTOR</div>
+            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-pink-500">
+                <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-pink-500 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">SEKTOR</div>
                 <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
                     {interactionData.popupImage ? (
-                        <img src={interactionData.popupImage} alt="Asset Offer" className="w-full h-auto object-contain max-h-[60vh]" />
+                        <img src={interactionData.popupImage} alt="Asset Offer" className="w-full h-auto object-contain max-h-[25vh] md:max-h-[60vh]" />
                     ) : (
                         <div className="p-10 text-gray-400">Gambar Sektor Tidak Ditemukan</div>
                     )}
                 </div>
-                <div className="text-center mt-2 mb-4">
-                    <p className="text-gray-500 text-xs font-bold uppercase">HARGA SEKTOR</p>
-                    <p className="text-3xl font-black text-green-600">Rp {interactionData.price}</p>
+                <div className="text-center mt-2 mb-2 md:mb-4">
+                    <p className="text-gray-500 text-[8px] md:text-xs font-bold uppercase">HARGA SEKTOR</p>
+                    <p className="text-lg md:text-3xl font-black text-green-600">Rp {interactionData.price}</p>
                 </div>
                 <div className="mt-2 flex gap-3 justify-center px-4 pb-2">
                     {turn === myRole ? (
                         <>
-                            <button onClick={() => endTurn()} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-bold text-lg transition-transform transform hover:scale-105">SKIP</button>
-                            <button onClick={handleBuyAsset} disabled={balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price} className={`flex-1 py-3 rounded-xl font-bold text-lg text-white shadow-lg transition-transform transform ${balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price ? 'bg-gray-400 cursor-not-allowed opacity-70' : 'bg-green-600 hover:bg-green-700 hover:scale-105 active:scale-95'}`}>
-                                {balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price ? "UANG KURANG" : "BELI"}
+                            <button onClick={() => endTurn()} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-lg">SKIP</button>
+                            
+                            <button onClick={handleBuyAsset} disabled={balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price} className={`flex-1 py-2 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-lg text-white shadow-lg ${balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price ? 'bg-gray-400 cursor-not-allowed opacity-70' : 'bg-green-600 hover:bg-green-700 active:scale-95'}`}>
+                                
+                                {balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price ? "KURANG" : "BELI"}
                             </button>
                         </>
                     ) : (
-                        <div className="text-white bg-gray-800 px-4 py-2 rounded-lg font-bold text-sm bg-opacity-80 w-full text-center">Menunggu lawan memutuskan...</div>
+                        <div className="text-white bg-gray-800 px-4 py-2 rounded-lg font-bold text-[10px] bg-opacity-80 w-full text-center">Menunggu lawan...</div>
                     )}
                 </div>
             </div>
@@ -808,17 +819,17 @@ const GameBoard = ({ roomId, myRole }) => {
 
       {phase === 'INTERACTION' && interactionData?.type === 'QUIZ_POPUP' && turn === myRole && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-md animate-fadeIn">
-            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-green-500">
-                <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-1 rounded-full font-bold shadow-md border-2 border-yellow tracking-widest uppercase text-sm">QUIZ</div>
-                <div className="mt-6 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
+            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-green-500">
+                <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-yellow tracking-widest uppercase text-[10px] md:text-sm">QUIZ</div>
+                <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
                     {interactionData.image ? (
-                        <img src={interactionData.image} alt="Quiz Question" className="w-full h-auto object-contain max-h-[50vh]" />
+                        <img src={interactionData.image} alt="Quiz Question" className="w-full h-auto object-contain max-h-[30vh] md:max-h-[50vh]" />
                     ) : (
                         <div className="p-10 text-gray-400">Memuat Soal...</div>
                     )}
                 </div>
-                <p className="text-center text-gray-500 text-sm font-bold mt-2 mb-1">PILIH JAWABAN YANG BENAR:</p>
-                <div className="grid grid-cols-2 gap-3 p-2">
+                <p className="text-center text-gray-500 text-[10px] md:text-sm font-bold mt-2 mb-1">PILIH JAWABAN YANG BENAR:</p>
+                <div className="grid grid-cols-2 gap-2 md:gap-3 p-2">
                     {['A', 'B', 'C', 'D'].map((option) => (
                         <button
                             key={option}
@@ -836,15 +847,16 @@ const GameBoard = ({ roomId, myRole }) => {
 
       {phase === 'INTERACTION' && interactionData?.type === 'QUIZ_POPUP' && turn !== myRole && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-            <div className="bg-white p-8 rounded-2xl shadow-2xl text-center border-4 border-gray-300">
-                <div className="text-6xl mb-4">🤔</div>
-                <h2 className="text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl text-center border-4 border-gray-300">
+                <div className="text-4xl md:text-6xl mb-2 md:mb-4">🤔</div>
+                <h2 className="text-sm md:text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">
+                    
                     Menunggu <span className="text-blue-600">{turn === 1 ? playerNames.p1 : playerNames.p2}</span> menjawab Quiz
                 </h2>
-                <div className="mt-6 flex justify-center gap-2">
-                    <span className="w-3 h-3 bg-gray-400 rounded-full animate-bounce"></span>
-                    <span className="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-100"></span>
-                    <span className="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-200"></span>
+                <div className="mt-4 flex justify-center gap-2">
+                    <span className="w-2 h-2 md:w-3 md:h-3 bg-gray-400 rounded-full animate-bounce"></span>
+                    <span className="w-2 h-2 md:w-3 md:h-3 bg-gray-400 rounded-full animate-bounce delay-100"></span>
+                    <span className="w-2 h-2 md:w-3 md:h-3 bg-gray-400 rounded-full animate-bounce delay-200"></span>
                 </div>
             </div>
         </div>
@@ -852,17 +864,17 @@ const GameBoard = ({ roomId, myRole }) => {
       
       {phase === 'JAIL_QUIZ' && interactionData?.type === 'JAIL_QUIZ_POPUP' && turn === myRole && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-md animate-fadeIn">
-            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-red-500">
-                <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-sm">FRAUD QUIZ</div>
-                <div className="mt-6 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
+            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-red-500">
+                <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">FRAUD QUIZ</div>
+                <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
                     {interactionData.image ? (
-                        <img src={interactionData.image} alt="Jail Quiz Question" className="w-full h-auto object-contain max-h-[50vh]" />
+                        <img src={interactionData.image} alt="Jail Quiz Question" className="w-full h-auto object-contain max-h-[30vh] md:max-h-[50vh]" />
                     ) : (
                         <div className="p-10 text-gray-400">Memuat Soal...</div>
                     )}
                 </div>
-                <p className="text-center text-gray-500 text-sm font-bold mt-2 mb-1">PILIH JAWABAN BENAR:</p>
-                <div className="grid grid-cols-2 gap-3 p-2">
+                <p className="text-center text-gray-500 text-[10px] md:text-sm font-bold mt-2 mb-1">PILIH JAWABAN BENAR:</p>
+                <div className="grid grid-cols-2 gap-2 md:gap-3 p-2">
                     {['A', 'B', 'C', 'D'].map((option) => (
                         <button
                             key={option}
@@ -880,10 +892,11 @@ const GameBoard = ({ roomId, myRole }) => {
 
       {phase === 'JAIL_QUIZ' && interactionData?.type === 'JAIL_QUIZ_POPUP' && turn !== myRole && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white p-8 rounded-2xl shadow-2xl text-center border-4 border-gray-300 animate-pulse">
-                <div className="text-6xl mb-4">⚖️</div>
-                <h2 className="text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">SIDANG BERLANGSUNG</h2>
-                <p className="text-gray-600 font-bold text-lg">Menunggu <span className="text-blue-600">{turn === 1 ? playerNames.p1 : playerNames.p2}</span> menjawab...</p>
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl text-center border-4 border-gray-300 animate-pulse">
+                <div className="text-4xl md:text-6xl mb-2 md:mb-4">⚖️</div>
+                <h2 className="text-sm md:text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">SIDANG BERLANGSUNG</h2>
+                
+                <p className="text-gray-600 font-bold text-xs md:text-lg">Menunggu <span className="text-blue-600">{turn === 1 ? playerNames.p1 : playerNames.p2}</span> menjawab...</p>
             </div>
         </div>
       )}
