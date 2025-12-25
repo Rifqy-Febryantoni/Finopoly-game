@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from 'react';
 import LobbyPage from './LobbyPage';
 import WaitingRoomPage from './WaitingRoomPage';
 import GameBoard from './GamePage';

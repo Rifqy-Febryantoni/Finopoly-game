@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef } from 'react'; 
 import { db } from '../firebase';
 import { ref, onValue, update, remove } from "firebase/database";
@@ -13,7 +14,7 @@ interface WaitingRoomProps {
     onBack: () => void; 
 }
 
-const WaitingRoomPage: React.FC<WaitingRoomProps> = ({ roomId, playerRole, playerName, onStartGame, onBack }) => {
+const WaitingRoomPage: React.FC<WaitingRoomProps> = ({ roomId, playerRole, onStartGame, onBack }) => {
   const [roomData, setRoomData] = React.useState<any>(null);
   const isLeavingRef = useRef(false);
 

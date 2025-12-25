@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'; 
+/* eslint-disable react-hooks/purity */
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useState, useEffect, useRef } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 import { boardTiles } from '../data/boardData';
 import { db } from '../firebase';
