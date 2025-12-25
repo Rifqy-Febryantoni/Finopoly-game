@@ -29,7 +29,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
       if (snapshot.exists()) { handleHostGame(); return; }
       
       await set(ref(db, 'rooms/' + newRoomId), {
-        players: { p1: { name: playerName, balance: 1500, position: 0, isReady: true } },
+        players: { p1: { name: playerName, balance: 1000, position: 0, isReady: true } },
         playerNames: { p1: playerName, p2: "Waiting..." },
         positions: { p1: 0, p2: 0 }, 
         turn: 1, phase: 'IDLE', playersConnected: 1, status: 'WAITING'
@@ -49,7 +49,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
       const data = snapshot.val();
       if (data.playersConnected >= 2) { setError("Room sudah penuh!"); setIsLoading(false); return; }
       
-      await set(child(roomRef, 'players/p2'), { name: playerName, balance: 1500, position: 0, isReady: true });
+      await set(child(roomRef, 'players/p2'), { name: playerName, balance: 1000, position: 0, isReady: true });
       await set(child(roomRef, 'playerNames/p2'), playerName);
       await set(child(roomRef, 'positions/p2'), 0);
       await set(child(roomRef, 'playersConnected'), 2);

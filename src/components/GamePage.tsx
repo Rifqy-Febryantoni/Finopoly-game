@@ -259,7 +259,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
              
              
              const boostMsg = growthBoosts[currentPlayerKey] > 0 ? ` (Boosted!)` : '';
-             showNotification(`Lewat Start! +Rp ${finalBonus}${boostMsg}`, 'success', 1500);
+             showNotification(`Lewat Start! +Rp ${finalBonus}${boostMsg}`, 'success', 1000);
         } else {
              updateDB({ [`positions/${currentPlayerKey}`]: trackerPos });
         }
