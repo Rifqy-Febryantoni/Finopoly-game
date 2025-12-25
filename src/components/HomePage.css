@@ -318,3 +318,25 @@
     padding: 15px 50px;
   }
 }
+
+@media (max-width: 768px) {
+  .bar {
+    height: 70px; 
+  }
+
+  .header {
+    padding: 0 15px; 
+  }
+
+  .nav-container {
+    gap: 15px; 
+  }
+
+  .nav-text {
+    font-size: 14px; 
+  }
+  
+  .logo {
+    height: 80%;
+  }
+}
