@@ -75,13 +75,13 @@
   justify-content: center;
   align-items: center;
   flex-direction: column;
-  padding: 10px; /* Padding aman agar tidak mepet layar */
+  padding: 10px;
   box-sizing: border-box;
 }
 
 .lobby-title-img {
   width: 1200px;
-  max-width: 85%; /* Responsif: Max 85% lebar layar */
+  max-width: 85%;
   height: auto;
   object-fit: contain;
   margin-bottom: 0px; 
@@ -89,19 +89,18 @@
 }
 
 /* =========================
-   GLASS PANEL (KARTU UTAMA)
+   GLASS PANEL (KARTU WAITING ROOM)
 ========================= */
 .glass-panel {
   background: rgba(95, 166, 215, 1);
   border: 3px solid white;
   border-radius: 20px;
   
-  /* --- SETUP RESPONSIF --- */
-  width: 90%;          /* Lebar 90% dari layar HP */
-  max-width: 500px;    /* Tapi jangan lebih dari 500px di Laptop */
+  /* --- SETUP RESPONSIF STANDAR --- */
+  width: 90%;          
+  max-width: 500px;    
   padding: 30px 20px;  
-  box-sizing: border-box; /* Agar padding tidak membuat kartu melebar */
-  /* ----------------------- */
+  box-sizing: border-box; 
 
   text-align: center;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -114,7 +113,6 @@
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); 
 }
 
-/* Text didalam panel */
 .glass-panel p, 
 .glass-panel div {
   font-size: 24px;
@@ -152,7 +150,6 @@
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-weight: 800;
   
-  /* Font responsif: Min 20px, Ideal 5% layar, Max 28px */
   font-size: clamp(20px, 5vw, 28px); 
   
   color: white;
@@ -164,29 +161,8 @@
 .glass-panel .action-btn { font-weight: 900; letter-spacing: 1px; }
 
 .btn-blue { background-color: #5f63d7; }
-.btn-blue:hover { background-color: #4a72c7; transform: translateY(-2px); }
-
 .btn-green { background-color: #5fd778; }
-.btn-green:hover { background-color: #4ac764; transform: translateY(-2px); }
-
-/* =========================
-   MISC ELEMENTS
-========================= */
-.divider {
-  margin: 20px 0;
-  border-top: 2px dashed rgba(255,255,255,0.3);
-  position: relative;
-  margin-top: 50px;
-}
-.divider span {
-  background: transparent; color: white; font-weight: bold; padding: 0 10px;
-  position: relative; top: 5px; text-shadow: 1px 1px 2px black;
-}
-
-.error-msg {
-  color: #ff6b6b; font-weight: bold; margin-top: 10px;
-  text-shadow: 1px 1px 0 black;
-}
+.error-msg { color: #ff6b6b; font-weight: bold; margin-top: 10px; text-shadow: 1px 1px 0 black; }
 
 .player-name { color: #5fd778; text-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
 .player-waiting {
@@ -201,8 +177,7 @@
 
 
 /* =======================================================
-   MEDIA QUERY: HP / MOBILE OPTIMIZATION
-   (Agar Header & Waiting Room tidak rusak di layar kecil)
+   MEDIA QUERY: HP / MOBILE OPTIMIZATION (AGAR PAS DI LAYAR KECIL)
 ======================================================= */
 
 /* 1. Fix Header (Tablet & Mobile) */
@@ -214,29 +189,25 @@
   .logo { height: 80%; }
 }
 
-/* 2. Fix Isi Kartu Lobby & Waiting Room (Mobile Kecil) */
+/* 2. Fix Tampilan HP Kecil (Waiting Room & Lobby) */
 @media (max-width: 600px) {
   .glass-panel {
-    width: 95%; /* Lebarkan sedikit di HP */
-    padding: 20px 10px; /* Kurangi padding agar muat lebih banyak konten */
+    width: 95%; /* Gunakan hampir seluruh lebar layar */
+    padding: 15px 10px; /* Padding sangat tipis agar konten muat */
   }
 
-  /* Kecilkan font di dalam kartu agar nama/ID panjang tidak menabrak */
+  /* Kecilkan font teks di dalam kartu */
   .glass-panel p, 
   .glass-panel div,
   .waiting-message {
-    font-size: 16px !important; 
+    font-size: 16px !important; /* Paksa font kecil */
     margin: 5px 0;
   }
 
+  /* Kecilkan teks Room ID yang biasanya besar */
+  .text-4xl { font-size: 24px !important; }
+
   /* Kecilkan input & tombol */
-  .custom-input {
-    font-size: 18px;
-    padding: 10px;
-  }
-  
-  .action-btn {
-    font-size: 18px;
-    padding: 12px;
-  }
+  .custom-input { font-size: 18px; padding: 10px; }
+  .action-btn { font-size: 18px; padding: 12px; }
 }
