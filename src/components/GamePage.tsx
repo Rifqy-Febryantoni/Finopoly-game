@@ -323,12 +323,12 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     else if (tile.type === 'GROWTH') { updates = { phase: 'INTERACTION', interactionData: { type: 'GROWTH' } }; }
     else if (tile.type === 'TAX') {
         
-        const tax = Math.floor(balances[currentPlayerKey] * 0.10);
+        const tax = Math.floor(balances[currentPlayerKey] * 0.05);
         updates = { phase: 'INTERACTION', interactionData: { type: 'TAX', amount: tax } };
     }
     else if (tile.type === 'INTEREST') {
         
-        const baseInterest = Math.floor(balances[currentPlayerKey] * 0.10);
+        const baseInterest = Math.floor(balances[currentPlayerKey] * 0.05);
         const finalInterest = calculateBoostedAmount(baseInterest, currentPlayerKey);
         updates = { phase: 'INTERACTION', interactionData: { type: 'INTEREST', amount: finalInterest, base: baseInterest } };
     }
