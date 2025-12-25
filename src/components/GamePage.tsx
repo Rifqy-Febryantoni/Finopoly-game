@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { boardTiles } from '../data/boardData';
 
 import { db } from '../firebase';
-import { ref, onValue, update } from "firebase/database";
+import { ref, onValue, update, onDisconnect } from "firebase/database";
 import './Lobby.css'; 
 import logo from '../img/Logo.png'; 
 
@@ -133,6 +133,22 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     };
     preloadImages();
   }, []);
+
+  useEffect(() => {
+    if (!roomId || winner) return;
+
+    const roomRef = ref(db, 'rooms/' + roomId);
+    const opponentKey = myRole === 1 ? 'p2' : 'p1';
+    const opponentName = playerNames[opponentKey] || "Lawan";
+
+    onDisconnect(roomRef).update({
+      winner: opponentName
+    });
+
+    return () => {
+      onDisconnect(roomRef).cancel();
+    };
+  }, [roomId, winner, myRole, playerNames]);
 
   useEffect(() => {
     if (!roomId) return;
