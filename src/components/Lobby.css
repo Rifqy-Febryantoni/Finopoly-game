@@ -148,6 +148,42 @@
 .waiting-message { font-size: 16px; margin: 20px 0; color: #e0e0e0; }
 @keyframes pulse-text { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
+.guide-card {
+  background: #5fa6d7; 
+  border: 3px solid white;
+  border-radius: 20px;
+  padding: 15px;
+  margin: 10px 0 20px 0;        
+  width: 90%;
+  max-width: 450px;
+  text-align: center;
+}
+
+.guide-title {
+  color: #fbbf24;
+  font-weight: 900;
+  font-size: 16px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.guide-text {
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+  .guide-card {
+    padding: 10px;
+    margin: 5px 0 15px 0;
+  }
+  .guide-title { font-size: 14px; }
+  .guide-text { font-size: 11px; }
+}
+
 /* =======================================================
    MEDIA QUERY: MOBILE / HP
 ======================================================= */

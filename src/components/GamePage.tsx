@@ -19,7 +19,6 @@ import dice4 from '../img/dice4.png';
 import dice5 from '../img/dice5.png';
 import dice6 from '../img/dice6.png';
 
-
 import bgmFile from '../Audio/game_music.mp3';
 
 const QUIZ_POOL = [
@@ -61,6 +60,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   const audioRef = useRef(new Audio(bgmFile)); 
   const [isMuted, setIsMuted] = useState(false);
 
+  // --- DATA ACCESSORS ---
   const positions = gameState?.positions || { p1: 0, p2: 0 };
   const balances = {
       p1: typeof gameState?.balances?.p1 === 'number' ? gameState.balances.p1 : 1000,
@@ -80,8 +80,12 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   const playersConnected = gameState?.playersConnected || 1;
   const playerNames = gameState?.playerNames || { p1: "Player 1", p2: "Player 2" };
 
+  // --- LOGIKA PUTARAN (DECREMENT SAAT LEWAT START) ---
+  const remainingRounds = gameState?.remainingRounds !== undefined ? gameState.remainingRounds : (gameState?.maxTurns || 15);
+
   const diceImages = [null, dice1, dice2, dice3, dice4, dice5, dice6];
 
+  // --- INISIALISASI AUDIO ---
   useEffect(() => {
     const audio = audioRef.current;
     audio.loop = true; 
@@ -105,16 +109,14 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     setIsMuted(!isMuted);
   };
 
+  // --- PRELOAD ASSETS ---
   useEffect(() => {
     const preloadImages = async () => {
         const imageUrls = [
             logo, dice1, dice2, dice3, dice4, dice5, dice6,
-            
-            ...boardTiles.map(t => t.image),
-            
-            ...boardTiles.map(t => t.assetPopup).filter(Boolean),
-            
-            ...boardTiles.map(t => t.infoPopup).filter(Boolean),
+            ...boardTiles.map((t: any) => t.image),
+            ...boardTiles.map((t: any) => t.assetPopup).filter(Boolean),
+            ...boardTiles.map((t: any) => t.infoPopup).filter(Boolean),
             ...QUIZ_POOL.map(q => q.image),
             ...JAIL_QUIZ_POOL.map(q => q.image)
         ];
@@ -122,9 +124,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
             return new Promise((resolve) => {
                 const img = new Image();
                 img.src = src;
-                
                 img.onload = resolve; 
-                
                 img.onerror = resolve; 
             });
         });
@@ -134,26 +134,20 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     preloadImages();
   }, []);
 
+  // --- AUTO DISCONNECT HANDLER ---
   useEffect(() => {
     if (!roomId || winner) return;
-
     const roomRef = ref(db, 'rooms/' + roomId);
     const opponentKey = myRole === 1 ? 'p2' : 'p1';
     const opponentName = playerNames[opponentKey] || "Lawan";
-
-    onDisconnect(roomRef).update({
-      winner: opponentName
-    });
-
-    return () => {
-      onDisconnect(roomRef).cancel();
-    };
+    onDisconnect(roomRef).update({ winner: opponentName });
+    return () => { onDisconnect(roomRef).cancel(); };
   }, [roomId, winner, myRole, playerNames]);
 
+  // --- SYNC GAME STATE ---
   useEffect(() => {
     if (!roomId) return;
     const roomRef = ref(db, 'rooms/' + roomId);
-    
     const unsubscribe = onValue(roomRef, (snapshot) => {
       const data = snapshot.val();
       if (data) setGameState(data);
@@ -161,16 +155,23 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     return () => unsubscribe();
   }, [roomId]);
 
+  // --- INISIALISASI REMAINING ROUNDS DI DB (HANYA HOST) ---
+  useEffect(() => {
+    if (gameState && gameState.maxTurns && gameState.remainingRounds === undefined && myRole === 1) {
+        updateDB({ remainingRounds: gameState.maxTurns });
+    }
+  }, [gameState, myRole]);
+
   const updateDB = (updates: any) => {
     update(ref(db, 'rooms/' + roomId), updates);
   };
 
+  // --- NAVIGASI ---
   useEffect(() => {
     const handleBeforeUnload = (e: any) => {
       if (!winner) { e.preventDefault(); e.returnValue = ''; return ''; }
     };
     const handlePopState = (e: any) => {
-      
       if (!winner) {
         window.history.pushState(null, "", window.location.href);
         setPendingNavigation('/'); 
@@ -193,7 +194,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   const handleConfirmExit = () => {
     if (!winner) {
         const opponentKey = myRole === 1 ? 'p2' : 'p1';
-        
         const opponentName = playerNames[opponentKey] || "Opponent";
         updateDB({ winner: opponentName }); 
     }
@@ -206,6 +206,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     setPendingNavigation(null);
   };
 
+  // --- HELPERS ---
   const showNotification = (message: any, type = 'info', duration = 3000) => {
     setNotification({ message, type });
     if (duration > 0) setTimeout(() => setNotification(null), duration);
@@ -217,17 +218,22 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   };
 
   const calculateBoostedAmount = (baseAmount: any, playerKey: any) => {
-    
     const level = growthBoosts[playerKey] || 0; 
     if (level === 0) return baseAmount;
     return Math.floor(baseAmount * (1 + (0.5 * level)));
+  };
+
+  const getAssetPrice = (tileIndex: number) => {
+      if (tileIndex <= 8) return 750;
+      if (tileIndex <= 16) return 1000;
+      if (tileIndex <= 24) return 1250;
+      return 1500;
   };
 
   useEffect(() => {
     if (!gameState) return;
     if (turn === myRole && phase === 'IDLE' && !winner) {
         const currentPlayerKey = turn === 1 ? 'p1' : 'p2';
-        
         if (jailedPlayers[currentPlayerKey]) {
             updateDB({ phase: 'JAIL_DECISION' });
         }
@@ -255,27 +261,42 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     const currentPlayerKey = turn === 1 ? 'p1' : 'p2';
     
     let trackerPos = positions[currentPlayerKey] || 0; 
+    
     const performStep = (remaining: any) => {
         if (remaining <= 0) {
             updateDB({ diceValue: stepsRemaining }); 
             checkTileInteraction(trackerPos);
             return;
         }
+        
         trackerPos = (trackerPos + 1) % 32;
+        
+        // --- LOGIKA PAS LEWAT START ---
         if (trackerPos === 0) { 
              const updates: any = {};
+             
+             // 1. Tambah Uang
              const baseBonus = 100;
              const finalBonus = calculateBoostedAmount(baseBonus, currentPlayerKey);
-             
              const currentBalance = Number(balances[currentPlayerKey]) || 0;
              updates[`balances/${currentPlayerKey}`] = currentBalance + finalBonus;
              updates[`positions/${currentPlayerKey}`] = trackerPos;
+             
+             // 2. KURANGI SISA PUTARAN (DECREMENT)
+             const currentRounds = gameState.remainingRounds !== undefined ? gameState.remainingRounds : gameState.maxTurns;
+             const newRounds = currentRounds - 1;
+             updates['remainingRounds'] = newRounds;
+
+             // 3. CEK GAME OVER JIKA PUTARAN HABIS
+             if (newRounds <= 0) {
+                 setTimeout(() => handleGameOverCheck(), 1000); 
+             }
+
              updateDB(updates);
              triggerStatEffect(currentPlayerKey, 'GAIN');
              
-             
              const boostMsg = growthBoosts[currentPlayerKey] > 0 ? ` (Boosted!)` : '';
-             showNotification(`Lewat Start! +Rp ${finalBonus}${boostMsg}`, 'success', 1000);
+             showNotification(`Lewat Start! +Rp ${finalBonus}${boostMsg} & Sisa Putaran -1`, 'success', 2000);
         } else {
              updateDB({ [`positions/${currentPlayerKey}`]: trackerPos });
         }
@@ -285,17 +306,36 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     performStep(stepsRemaining);
   };
 
+  const handleGameOverCheck = () => {
+      const p1Bal = balances.p1;
+      const p2Bal = balances.p2;
+      
+      let winnerName = "";
+      if (p1Bal > p2Bal) winnerName = playerNames.p1;
+      else if (p2Bal > p1Bal) winnerName = playerNames.p2;
+      else winnerName = "SERI (Uang Sama)";
+
+      updateDB({ winner: winnerName });
+  };
+
   const handleTileClick = (targetIndex: any) => {
     if (phase !== 'TRAVEL_SELECT' || turn !== myRole) return;
     const currentPlayerKey = turn === 1 ? 'p1' : 'p2';
     updateDB({ phase: 'MOVING' });
     let updates: any = { [`positions/${currentPlayerKey}`]: targetIndex };
     if (targetIndex === 0) {
+        // Jika travel langsung ke Start
         const baseBonus = 100;
         const finalBonus = calculateBoostedAmount(baseBonus, currentPlayerKey);
-        
         const currentBalance = Number(balances[currentPlayerKey]) || 0;
         updates[`balances/${currentPlayerKey}`] = currentBalance + finalBonus;
+        
+        // Decrement Putaran
+        const currentRounds = gameState.remainingRounds !== undefined ? gameState.remainingRounds : gameState.maxTurns;
+        const newRounds = currentRounds - 1;
+        updates['remainingRounds'] = newRounds;
+        if (newRounds <= 0) setTimeout(() => handleGameOverCheck(), 1000);
+
         showNotification(`Terbang ke Start! +Rp ${finalBonus}`, 'success');
         triggerStatEffect(currentPlayerKey, 'GAIN');
     }
@@ -304,12 +344,11 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   };
 
   const checkTileInteraction = (tileIndex: any) => {
-    
     const tile = boardTiles[tileIndex];
     const currentPlayerKey = turn === 1 ? 'p1' : 'p2';
-    
     const owner = ownership[tileIndex];
-    const basePrice = (tileIndex + 1) * 50;
+    const assetPrice = getAssetPrice(tileIndex);
+
     let updates: any = {};
 
     if (tile.type === 'TRAVEL' || tile.label === 'Travel') { updates['phase'] = 'TRAVEL_SELECT'; }
@@ -322,27 +361,24 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     else if (tile.type === 'START') { endTurn(updates); return; }
     else if (tile.type === 'GROWTH') { updates = { phase: 'INTERACTION', interactionData: { type: 'GROWTH' } }; }
     else if (tile.type === 'TAX') {
-        
         const tax = Math.floor(balances[currentPlayerKey] * 0.05);
         updates = { phase: 'INTERACTION', interactionData: { type: 'TAX', amount: tax } };
     }
     else if (tile.type === 'INTEREST') {
-        
         const baseInterest = Math.floor(balances[currentPlayerKey] * 0.05);
         const finalInterest = calculateBoostedAmount(baseInterest, currentPlayerKey);
         updates = { phase: 'INTERACTION', interactionData: { type: 'INTEREST', amount: finalInterest, base: baseInterest } };
     }
     else if (tile.type === 'ASSET') {
         if (!owner) {
-            updates = { phase: 'INTERACTION', interactionData: { type: 'ASSET_BUY', price: basePrice, name: `Sektor ${tileIndex}`, tileIndex, popupImage: tile.assetPopup } };
+            updates = { phase: 'INTERACTION', interactionData: { type: 'ASSET_BUY', price: assetPrice, name: `Sektor ${tileIndex}`, tileIndex, popupImage: tile.assetPopup } };
         } else if (owner === currentPlayerKey) {
-            const baseDiv = Math.floor(basePrice * 0.1);
+            const baseDiv = Math.floor(assetPrice * 0.1);
             const finalDiv = calculateBoostedAmount(baseDiv, currentPlayerKey);
             updates = { phase: 'INTERACTION', interactionData: { type: 'ASSET_DIVIDEND', dividend: finalDiv, base: baseDiv, name: `Sektor ${tileIndex}` } };
         } else {
-            const rent = Math.floor(basePrice * 0.2);
-            const acquire = basePrice * 2;
-            
+            const rent = Math.floor(assetPrice * 0.2);
+            const acquire = assetPrice * 2;
             if (balances[currentPlayerKey] < rent) {
                 handleBankruptcy(currentPlayerKey);
                 return;
@@ -351,7 +387,14 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         }
     }
     else if (tile.type === 'INFO') {
-        updates = { phase: 'INTERACTION', interactionData: { type: 'INFO_POPUP', content: tile.infoPopup } };
+        const newBal = balances[currentPlayerKey] + 100;
+        updates = { 
+            phase: 'INTERACTION', 
+            interactionData: { type: 'INFO_POPUP', content: tile.infoPopup },
+            [`balances/${currentPlayerKey}`]: newBal 
+        };
+        showNotification("Info: +Rp 100", 'success');
+        triggerStatEffect(currentPlayerKey, 'GAIN');
     }
     else if (tile.type === 'QUIZ') {
         const randomQuiz = QUIZ_POOL[Math.floor(Math.random() * QUIZ_POOL.length)];
@@ -361,16 +404,14 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     updateDB(updates);
   };
 
-  const endTurn = (extraUpdates = {}) => {
+  const endTurn = (extraUpdates: any = {}) => {
     const nextTurn = turn === 1 ? 2 : 1;
     updateDB({ ...extraUpdates, phase: 'IDLE', interactionData: null, turn: nextTurn, diceValue: 1 });
   };
 
-  // --- HANDLERS ---
   const handleTakeBoost = () => {
     if (turn !== myRole) return;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
-    
     updateDB({ [`growthBoosts/${playerKey}`]: growthBoosts[playerKey] + 1 });
     showNotification("Growth Boost Bertambah!", 'success');
     endTurn();
@@ -379,15 +420,22 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     if (turn !== myRole) return;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
     
-    updateDB({ [`balances/${playerKey}`]: Math.max(0, balances[playerKey] - interactionData.amount) });
+    // @ts-ignore
+    const newBal = Math.max(0, balances[playerKey] - interactionData.amount);
+    
+    updateDB({ [`balances/${playerKey}`]: newBal });
     triggerStatEffect(playerKey, 'LOSS');
-    endTurn();
+    
+    if (newBal <= 0) {
+        handleBankruptcy(playerKey);
+    } else {
+        endTurn();
+    }
   };
   const handleClaimInterest = () => {
     if (turn !== myRole) return;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
     const amount = interactionData.amount || interactionData.dividend;
-    
     updateDB({ [`balances/${playerKey}`]: balances[playerKey] + amount });
     triggerStatEffect(playerKey, 'GAIN');
     endTurn();
@@ -397,25 +445,52 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     const isCorrect = choice === interactionData.correctAnswer;
     handleQuizResult(isCorrect);
   };
+  
   const handleQuizResult = (isCorrect: any) => {
     const playerKey = myRole === 1 ? 'p1' : 'p2';
     if (isCorrect) {
         updateDB({ [`positions/${playerKey}`]: 24, phase: 'TRAVEL_SELECT' }); 
         showNotification("BENAR! Silakan Pilih Tujuan", 'success');
     } else {
-        updateDB({ [`positions/${playerKey}`]: 8, [`jailedPlayers/${playerKey}`]: true }); 
-        showNotification("SALAH! Masuk Penjara.", 'error');
-        endTurn();
+        // SALAH = -500 & PENJARA
+        // @ts-ignore
+        const currentBal = balances[playerKey];
+        const newBal = Math.max(0, currentBal - 500);
+        
+        updateDB({ 
+            [`balances/${playerKey}`]: newBal,
+            [`positions/${playerKey}`]: 8, 
+            [`jailedPlayers/${playerKey}`]: true 
+        }); 
+        
+        triggerStatEffect(playerKey, 'LOSS');
+        showNotification("SALAH! -Rp 500 & Masuk Penjara", 'error');
+
+        // --- FIX BUG: CEK KEBANGKRUTAN DISINI ---
+        if (newBal <= 0) {
+            setTimeout(() => handleBankruptcy(playerKey), 1000);
+        } else {
+            endTurn();
+        }
     }
   };
+
   const handleBuyAsset = () => {
     if (turn !== myRole) return;
     const { price, tileIndex } = interactionData;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
     
-    updateDB({ [`balances/${playerKey}`]: balances[playerKey] - price, [`ownership/${tileIndex}`]: playerKey });
+    // @ts-ignore
+    const newBal = balances[playerKey] - price;
+    
+    updateDB({ [`balances/${playerKey}`]: newBal, [`ownership/${tileIndex}`]: playerKey });
     triggerStatEffect(playerKey, 'LOSS');
-    endTurn();
+    
+    if (newBal <= 0) {
+        handleBankruptcy(playerKey);
+    } else {
+        endTurn();
+    }
   };
   const handlePayRent = () => {
     if (turn !== myRole) return;
@@ -423,10 +498,18 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     const opponentKey = myRole === 1 ? 'p2' : 'p1';
     const { rent } = interactionData;
     
-    updateDB({ [`balances/${playerKey}`]: balances[playerKey] - rent, [`balances/${opponentKey}`]: balances[opponentKey] + rent });
+    // @ts-ignore
+    const newBal = balances[playerKey] - rent;
+    
+    updateDB({ [`balances/${playerKey}`]: newBal, [`balances/${opponentKey}`]: balances[opponentKey] + rent });
     triggerStatEffect(playerKey, 'LOSS');
     triggerStatEffect(opponentKey, 'GAIN');
-    endTurn();
+    
+    if (newBal <= 0) {
+        handleBankruptcy(playerKey);
+    } else {
+        endTurn();
+    }
   };
   const handleAcquireAsset = () => {
     if (turn !== myRole) return;
@@ -434,9 +517,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     const playerKey = myRole === 1 ? 'p1' : 'p2';
     const opponentKey = myRole === 1 ? 'p2' : 'p1';
     updateDB({ 
-        
         [`balances/${playerKey}`]: balances[playerKey] - acquirePrice, 
-        
         [`balances/${opponentKey}`]: balances[opponentKey] + acquirePrice,
         [`ownership/${tileIndex}`]: playerKey 
     });
@@ -473,7 +554,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     const playerKey = myRole === 1 ? 'p1' : 'p2';
     if (isCorrect) {
         const roll = Math.floor(Math.random() * 6) + 1;
-        
         const newPos = (positions[playerKey] + roll) % 32;
         updateDB({ [`jailedPlayers/${playerKey}`]: false, [`positions/${playerKey}`]: newPos, diceValue: roll });
         showNotification("Bebas & Jalan " + roll, 'success');
@@ -485,7 +565,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   };
   const handleBankruptcy = (bankruptPlayer: any) => {
       const winnerKey = bankruptPlayer === 'p1' ? 'p2' : 'p1';
-      
       const winnerName = playerNames[winnerKey];
       updateDB({ winner: winnerName });
   };
@@ -522,7 +601,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   };
 
   const getTileStyle = (tileIndex: any) => {
-    
     const owner = ownership[tileIndex];
     let finalClass = ""; 
     if (owner === 'p1') finalClass = 'border-blue-600 border-4 z-20'; 
@@ -534,7 +612,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   const getStatClass = (playerKey: any) => {
     let base = "flex flex-col items-center justify-center p-1 md:p-2 rounded-lg md:rounded-xl border-2 md:border-4 shadow-lg transition-all duration-500 w-16 md:w-36 ";
     const effect = statEffect[playerKey];
-    
     const isJailed = jailedPlayers[playerKey];
     const isTurn = (playerKey === 'p1' && turn === 1) || (playerKey === 'p2' && turn === 2);
     if (effect === 'GAIN') return base + "bg-green-500 border-green-300 text-white scale-110 shadow-[0_0_20px_#22c55e] z-50";
@@ -576,6 +653,9 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                 <p className="text-xl font-bold text-gray-600 mb-8">
                     {imWinner ? "Selamat! Pertahankan ya." : "Tetap Semangat! Coba lagi lain kali ya."}
                 </p>
+                <div className="mb-8 flex justify-center">
+                    <img src={logo} alt="Finopoly Logo" className="h-40 object-contain drop-shadow-md" />
+                </div>
                 <button 
                     onClick={() => window.location.href = '/'} 
                     className="bg-gray-800 text-white px-8 py-3 rounded-full font-bold hover:bg-gray-700 transition-all shadow-lg hover:scale-105"
@@ -602,29 +682,23 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         </nav>
       </header>
 
-      {/* --- BOARD YANG SELALU KOTAK DAN MUAT DI LAYAR --- */}
       <main className="lobby-content flex items-center justify-center">
         
-        {/* MAGIC CSS AGAR BOARD KOTAK & RESPONSIVE */}
         <div 
             className="relative bg-gray-800 p-1 rounded-lg shadow-2xl"
             style={{ 
-                width: 'min(95vw, 100vh - 180px)', /* Pilih ukuran terkecil agar muat */
-                aspectRatio: '1/1',                /* Paksa selalu kotak */
-                maxHeight: '800px'                 /* Batas maksimal agar tidak raksasa di layar lebar */
+                width: 'min(95vw, 100vh - 180px)', 
+                aspectRatio: '1/1',
+                maxHeight: '800px'
             }}
         > 
           
           <div className="grid grid-cols-9 grid-rows-9 gap-0.5 w-full h-full bg-gray-800 p-1 rounded-lg">
-            
-            {boardTiles.map((tile, i) => {
+            {boardTiles.map((tile: any, i: any) => {
               const pos = getGridPosition(i);
-              
               const isP1Here = positions.p1 === i;
-              
               const isP2Here = positions.p2 === i;
               const borderClass = getTileStyle(i);
-              
               const owner = ownership[i];
               let overlayClass = "";
               if (owner === 'p1') overlayClass = "bg-blue-600/45"; 
@@ -646,23 +720,21 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
             <div className="bg-white col-start-2 col-end-9 row-start-2 row-end-9 m-0.5 rounded-lg flex flex-col justify-between shadow-inner relative overflow-hidden">
                 <div className="w-full flex justify-between items-start p-1 z-10 border-b border-gray-100 bg-gray-50 bg-opacity-80">
                     <div className={getStatClass('p1')}>
-                        
                         <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p1}</span>
-                        
                         <span className="text-[10px] md:text-lg font-black">Rp {balances.p1}</span>
-                        
                         {growthBoosts.p1 > 0 && <span className="text-[6px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p1}</span>}
-                        
                         {jailedPlayers.p1 && <span className="text-[6px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
                     </div>
+                    
+                    <div className="flex flex-col items-center justify-center pt-2">
+                        <span className="text-[8px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest">SISA PUTARAN</span>
+                        <span className="text-xl md:text-3xl font-black text-blue-600">{remainingRounds}</span>
+                    </div>
+
                     <div className={getStatClass('p2')}>
-                        
                         <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p2}</span>
-                        
                         <span className="text-[10px] md:text-lg font-black">Rp {balances.p2}</span>
-                        
                         {growthBoosts.p2 > 0 && <span className="text-[6px] md:text-[10px] text-green-600 font-bold block bg-green-100 rounded px-1 mt-1">Boost x{growthBoosts.p2}</span>}
-                        
                         {jailedPlayers.p2 && <span className="text-[6px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
                     </div>
                 </div>
@@ -678,7 +750,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                     {(phase === 'IDLE' || phase === 'MOVING') && !winner && (
                         <div className="flex flex-col items-center justify-center gap-1">
                             <div className="text-[8px] md:text-sm font-bold text-gray-400 uppercase tracking-widest">
-                                
                                 {turn === myRole ? "GILIRAN KAMU" : `MENUNGGU ${turn === 1 ? playerNames.p1 : playerNames.p2}...`}
                             </div>
                             
@@ -747,9 +818,9 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                             )}
                             {interactionData.type === 'ASSET_DIVIDEND' && (
                                 <>
-                                    <h3 className="text-xs md:text-xl font-bold text-green-600 mb-2">DIVIDEN</h3>
-                                    <p className="text-lg md:text-4xl font-black text-gray-800 mb-2">+ {interactionData.dividend}</p>
-                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-1 md:py-3 rounded-lg md:rounded-xl font-bold shadow-lg text-[10px] md:text-base">AMBIL</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
+                                    <h3 className="text-sm md:text-xl font-bold text-green-600 mb-2">DIVIDEN</h3>
+                                    <p className="text-xl md:text-4xl font-black text-gray-800 mb-4">+ {interactionData.dividend}</p>
+                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-bold shadow-lg text-xs md:text-base">AMBIL</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
                                 </>
                             )}
                         </div>
@@ -757,20 +828,19 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
 
                     {phase === 'JAIL_DECISION' && (
                         <div className="w-full max-w-[90%] animate-fadeIn">
-                            <h2 className="text-xs md:text-xl font-bold text-gray-800 mb-1 md:mb-4 text-center">👮 PILIHAN PENJARA</h2>
+                            <h2 className="text-sm md:text-xl font-bold text-gray-800 mb-1 md:mb-4 text-center">👮 PILIHAN PENJARA</h2>
                             {turn === myRole ? (
                                 <div className="flex gap-2 justify-center">
-                                    <button onClick={handleJailRoll} disabled={isLocalRolling} className="flex-1 bg-gray-800 text-white p-2 rounded-lg font-bold hover:bg-gray-700 text-[8px] md:text-sm">ROLL (1/6)</button>
-                                    <button onClick={handleJailQuizInit} className="flex-1 bg-blue-600 text-white p-2 rounded-lg font-bold hover:bg-blue-700 text-[8px] md:text-sm">KUIS HUKUM</button>
+                                    <button onClick={handleJailRoll} disabled={isLocalRolling} className="flex-1 bg-gray-800 text-white p-2 rounded-lg font-bold hover:bg-gray-700 text-[10px] md:text-sm">ROLL (1/6)</button>
+                                    <button onClick={handleJailQuizInit} className="flex-1 bg-blue-600 text-white p-2 rounded-lg font-bold hover:bg-blue-700 text-[10px] md:text-sm">KUIS HUKUM</button>
                                 </div>
-                            ) : <p className="text-center text-gray-400 text-[8px]">Menunggu lawan...</p>}
+                            ) : <p className="text-center text-gray-400 text-[10px]">Menunggu lawan...</p>}
                         </div>
                     )}
                 </div>
 
                 <div className="w-full text-center py-0.5 bg-gray-50 border-t border-gray-100">
                     <span className="text-[8px] md:text-[10px] text-gray-400 font-mono">
-                        
                         Posisi: {playerNames.p1}({positions.p1}) | {playerNames.p2}({positions.p2})
                     </span>
                 </div>
@@ -799,13 +869,12 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         </div>
       )}
 
-      {/* --- POPUPS INTERAKSI FULLSCREEN --- */}
       {phase === 'INTERACTION' && interactionData?.type === 'INFO_POPUP' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-md animate-fadeIn">
             <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-cyan-400">
                 <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-cyan-600 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">INFOGRAFIS</div>
                 <div className="mt-4 rounded-xl overflow-hidden border border-gray-200">
-                    <img src={interactionData.content} alt="Informasi Keuangan" className="w-full h-auto object-contain max-h-[30vh] md:max-h-[70vh]" />
+                    <img src={interactionData.content} alt="Informasi Keuangan" className="w-full h-auto object-contain max-h-[65vh] md:max-h-[70vh]" />
                 </div>
                 <div className="mt-4 flex justify-center">
                     {turn === myRole ? (
@@ -822,7 +891,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                 <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-pink-500 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">SEKTOR</div>
                 <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
                     {interactionData.popupImage ? (
-                        <img src={interactionData.popupImage} alt="Asset Offer" className="w-full h-auto object-contain max-h-[25vh] md:max-h-[60vh]" />
+                        <img src={interactionData.popupImage} alt="Asset Offer" className="w-full h-auto object-contain max-h-[50vh] md:max-h-[60vh]" />
                     ) : (
                         <div className="p-10 text-gray-400">Gambar Sektor Tidak Ditemukan</div>
                     )}
@@ -835,9 +904,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                     {turn === myRole ? (
                         <>
                             <button onClick={() => endTurn()} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-lg">SKIP</button>
-                            
                             <button onClick={handleBuyAsset} disabled={balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price} className={`flex-1 py-2 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-lg text-white shadow-lg ${balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price ? 'bg-gray-400 cursor-not-allowed opacity-70' : 'bg-green-600 hover:bg-green-700 active:scale-95'}`}>
-                                
                                 {balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price ? "KURANG" : "BELI"}
                             </button>
                         </>
@@ -855,7 +922,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                 <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-yellow tracking-widest uppercase text-[10px] md:text-sm">QUIZ</div>
                 <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
                     {interactionData.image ? (
-                        <img src={interactionData.image} alt="Quiz Question" className="w-full h-auto object-contain max-h-[30vh] md:max-h-[50vh]" />
+                        <img src={interactionData.image} alt="Quiz Question" className="w-full h-auto object-contain max-h-[50vh] md:max-h-[60vh]" />
                     ) : (
                         <div className="p-10 text-gray-400">Memuat Soal...</div>
                     )}
@@ -882,7 +949,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl text-center border-4 border-gray-300">
                 <div className="text-4xl md:text-6xl mb-2 md:mb-4">🤔</div>
                 <h2 className="text-sm md:text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">
-                    
                     Menunggu <span className="text-blue-600">{turn === 1 ? playerNames.p1 : playerNames.p2}</span> menjawab Quiz
                 </h2>
                 <div className="mt-4 flex justify-center gap-2">
@@ -900,7 +966,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                 <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">FRAUD QUIZ</div>
                 <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
                     {interactionData.image ? (
-                        <img src={interactionData.image} alt="Jail Quiz Question" className="w-full h-auto object-contain max-h-[30vh] md:max-h-[50vh]" />
+                        <img src={interactionData.image} alt="Jail Quiz Question" className="w-full h-auto object-contain max-h-[50vh] md:max-h-[60vh]" />
                     ) : (
                         <div className="p-10 text-gray-400">Memuat Soal...</div>
                     )}
@@ -927,7 +993,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl text-center border-4 border-gray-300 animate-pulse">
                 <div className="text-4xl md:text-6xl mb-2 md:mb-4">⚖️</div>
                 <h2 className="text-sm md:text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">SIDANG BERLANGSUNG</h2>
-                
                 <p className="text-gray-600 font-bold text-xs md:text-lg">Menunggu <span className="text-blue-600">{turn === 1 ? playerNames.p1 : playerNames.p2}</span> menjawab...</p>
             </div>
         </div>

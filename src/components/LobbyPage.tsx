@@ -15,6 +15,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
   const [mode, setMode] = useState<'MENU' | 'HOST' | 'JOIN'>('MENU');
   const [playerName, setPlayerName] = useState('');
   const [roomId, setRoomId] = useState('');
+  const [maxTurns, setMaxTurns] = useState(1);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -22,17 +23,24 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
 
   const handleHostGame = async () => {
     if (!playerName.trim()) { setError("Nama tidak boleh kosong!"); return; }
+    if (maxTurns < 1 || maxTurns > 50) { setError("Putaran harus antara 1 - 50!"); return; }
+    
     setIsLoading(true); setError('');
     const newRoomId = generateRoomId();
+    
     try {
       const snapshot = await get(child(ref(db), `rooms/${newRoomId}`));
-      if (snapshot.exists()) { handleHostGame(); return; }
+      if (snapshot.exists()) { handleHostGame(); return; } // Retry if ID exists
       
       await set(ref(db, 'rooms/' + newRoomId), {
         players: { p1: { name: playerName, balance: 1000, position: 0, isReady: true } },
         playerNames: { p1: playerName, p2: "Waiting..." },
         positions: { p1: 0, p2: 0 }, 
-        turn: 1, phase: 'IDLE', playersConnected: 1, status: 'WAITING'
+        turn: 1, 
+        phase: 'IDLE', 
+        playersConnected: 1, 
+        status: 'WAITING',
+        maxTurns: Number(maxTurns) // Simpan jumlah putaran ke database
       });
 
       onJoinGame(newRoomId, '1', playerName);
@@ -84,10 +92,26 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
           {mode === 'HOST' && (
             <>
               <h2 className="text-3xl font-black mb-2 text-white drop-shadow-md">HOST GAME</h2>
-              <p className="text-white text-sm mb-6 opacity-90">Isi Nama lalu Click Start.</p>
-              <input type="text" placeholder="NAME" className="custom-input" maxLength={12} value={playerName} onChange={(e) => setPlayerName(e.target.value)} />
+              <p className="text-white text-sm mb-4 opacity-90">Isi Nama dan Berapa Lama Game Berjalan.</p>
+              
+              <div className="w-full mb-2">
+                <input type="text" placeholder ="NAME" className="custom-input" maxLength={12} value={playerName} onChange={(e) => setPlayerName(e.target.value)} />
+              </div>
+
+              <div className="w-full mb-4">
+                <label className="text-white text-xs font-bold ml-1 block text-center mb-1">JUMLAH PUTARAN</label>
+                <input 
+                  type="number" 
+                  className="custom-input" 
+                  min={1} 
+                  max={50} 
+                  value={maxTurns} 
+                  onChange={(e) => setMaxTurns(Number(e.target.value))} 
+                />
+              </div>
+
               {error && <div className="error-msg">{error}</div>}
-              <button onClick={handleHostGame} disabled={isLoading} className="action-btn btn-blue mt-4">{isLoading ? "CREATING..." : "START"}</button>
+              <button onClick={handleHostGame} disabled={isLoading} className="action-btn btn-blue mt-2">{isLoading ? "CREATING..." : "START"}</button>
               <button onClick={() => { setMode('MENU'); setError(''); }} className="text-white font-bold mt-4 underline text-sm hover:text-gray-200">BACK TO MENU</button>
             </>
           )}
@@ -103,6 +127,15 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
               <button onClick={() => { setMode('MENU'); setError(''); }} className="text-white font-bold mt-4 underline text-sm hover:text-gray-200">BACK TO MENU</button>
             </>
           )}
+        </div>
+        <div className="guide-card animate-zoomIn">
+          <div className="guide-title">CARA BERMAIN:</div>
+          <div className="guide-text">
+            Pemain yang <b>BANGKRUT</b> akan kalah 
+            <p>ATAU</p>
+            <p>Pemain dengan <b>UANG TERBANYAK</b> akan menang. </p>
+            <p>(hanya berlaku jika tidak ada yang bangkrut saat putaran habis)</p>
+          </div>
         </div>
       </main>
       <footer className="bar footer">

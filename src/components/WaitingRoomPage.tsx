@@ -58,6 +58,7 @@ const WaitingRoomPage: React.FC<WaitingRoomProps> = ({ roomId, playerRole, onSta
   const p1Name = roomData?.playerNames?.p1 || "Unknown";
   const p2Name = roomData?.playerNames?.p2 || "Waiting...";
   const isP2Connected = roomData?.playersConnected >= 2;
+  const maxTurns = roomData?.maxTurns || 5; 
 
   if (!roomData) return <div className="game-bg-container"><div className="text-white text-center mt-20">Loading Room...</div></div>;
 
@@ -73,13 +74,20 @@ const WaitingRoomPage: React.FC<WaitingRoomProps> = ({ roomId, playerRole, onSta
 
       <main className="lobby-content">
         <img src={lobbyTitle} alt="Lobby" className="lobby-title-img animate-zoomIn" style={{ width: '400px', marginBottom: '10px' }} />
-
         <div className="glass-panel animate-zoomIn" style={{ padding: '25px', width: '450px', marginTop: '0' }}>
             <h2 className="text-2xl font-black text-white mb-2 drop-shadow-md">WAITING ROOM</h2>
             
             <div className="text-center mb-6">
-                <span className="text-gray-300 font-bold text-xs uppercase tracking-widest">ROOM ID</span>
-                <div className="text-4xl font-black text-yellow-400 tracking-wider drop-shadow-sm select-all">{roomId}</div>
+                <div className="flex justify-between items-center px-4">
+                    <div className="text-center">
+                        <span className="text-gray-300 font-bold text-xs uppercase tracking-widest block">ROOM ID</span>
+                        <span className="text-4xl font-black text-yellow-400 tracking-wider drop-shadow-sm select-all">{roomId}</span>
+                    </div>
+                    <div className="text-center border-l border-white/30 pl-4">
+                        <span className="text-gray-300 font-bold text-xs uppercase tracking-widest block">PUTARAN</span>
+                        <span className="text-4xl font-black text-blue-300 tracking-wider drop-shadow-sm">{maxTurns}</span>
+                    </div>
+                </div>
             </div>
 
             <div className="space-y-3 mb-6">
