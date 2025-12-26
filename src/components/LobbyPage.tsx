@@ -40,7 +40,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
         phase: 'IDLE', 
         playersConnected: 1, 
         status: 'WAITING',
-        maxTurns: Number(maxTurns) // Simpan jumlah putaran ke database
+        maxTurns: Number(maxTurns) // Simpan jumlah puFtaran ke database
       });
 
       onJoinGame(newRoomId, '1', playerName);
@@ -112,7 +112,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
 
               {error && <div className="error-msg">{error}</div>}
               <button onClick={handleHostGame} disabled={isLoading} className="action-btn btn-blue mt-2">{isLoading ? "CREATING..." : "START"}</button>
-              <button onClick={() => { setMode('MENU'); setError(''); }} className="text-white font-bold mt-4 underline text-sm hover:text-gray-200">BACK TO MENU</button>
+              <button onClick={() => { setMode('MENU'); setError(''); }} className="text-white font-bold mt-4 underline text-sm hover:text-gray-200">KELUAR</button>
             </>
           )}
 
@@ -124,7 +124,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
               <input type="number" placeholder="ROOM ID" className="custom-input" value={roomId} onChange={(e) => setRoomId(e.target.value)} />
               {error && <div className="error-msg">{error}</div>}
               <button onClick={handleJoinGame} disabled={isLoading} className="action-btn btn-green mt-4">{isLoading ? "JOINING..." : "START"}</button>
-              <button onClick={() => { setMode('MENU'); setError(''); }} className="text-white font-bold mt-4 underline text-sm hover:text-gray-200">BACK TO MENU</button>
+              <button onClick={() => { setMode('MENU'); setError(''); }} className="text-white font-bold mt-4 underline text-sm hover:text-gray-200">KELUAR</button>
             </>
           )}
         </div>

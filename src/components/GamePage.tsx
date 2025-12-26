@@ -76,16 +76,16 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
       p2: typeof gameState?.growthBoosts?.p2 === 'number' ? gameState.growthBoosts.p2 : 0
   };
   const interactionData = gameState?.interactionData || null;
-  const winner = gameState?.winner || null;
+  const winner = gameState?.winner || null; // Sekarang menyimpan 'p1', 'p2', atau 'draw'
   const playersConnected = gameState?.playersConnected || 1;
   const playerNames = gameState?.playerNames || { p1: "Player 1", p2: "Player 2" };
 
-  // --- LOGIKA PUTARAN (DECREMENT SAAT LEWAT START) ---
+  // --- LOGIKA PUTARAN (SISA PUTARAN) ---
   const remainingRounds = gameState?.remainingRounds !== undefined ? gameState.remainingRounds : (gameState?.maxTurns || 15);
 
   const diceImages = [null, dice1, dice2, dice3, dice4, dice5, dice6];
 
-  // --- INISIALISASI AUDIO ---
+  // --- AUDIO ---
   useEffect(() => {
     const audio = audioRef.current;
     audio.loop = true; 
@@ -93,9 +93,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     audio.muted = isMuted;
     const playPromise = audio.play();
     if (playPromise !== undefined) {
-      playPromise.catch((error) => {
-        console.log("Audio autoplay prevented by browser:", error);
-      });
+      playPromise.catch(() => {}); // Ignore autoplay error
     }
     return () => {
       audio.pause();
@@ -134,15 +132,16 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     preloadImages();
   }, []);
 
-  // --- AUTO DISCONNECT HANDLER ---
+  // --- AUTO DISCONNECT (MENYERAH JIKA KELUAR) ---
   useEffect(() => {
     if (!roomId || winner) return;
     const roomRef = ref(db, 'rooms/' + roomId);
+    // Simpan code lawan ('p1' atau 'p2') sebagai winner jika user disconnect
     const opponentKey = myRole === 1 ? 'p2' : 'p1';
-    const opponentName = playerNames[opponentKey] || "Lawan";
-    onDisconnect(roomRef).update({ winner: opponentName });
+    
+    onDisconnect(roomRef).update({ winner: opponentKey });
     return () => { onDisconnect(roomRef).cancel(); };
-  }, [roomId, winner, myRole, playerNames]);
+  }, [roomId, winner, myRole]);
 
   // --- SYNC GAME STATE ---
   useEffect(() => {
@@ -155,6 +154,10 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     return () => unsubscribe();
   }, [roomId]);
 
+    const updateDB = (updates: any) => {
+    update(ref(db, 'rooms/' + roomId), updates);
+    };
+
   // --- INISIALISASI REMAINING ROUNDS DI DB (HANYA HOST) ---
   useEffect(() => {
     if (gameState && gameState.maxTurns && gameState.remainingRounds === undefined && myRole === 1) {
@@ -162,11 +165,9 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     }
   }, [gameState, myRole]);
 
-  const updateDB = (updates: any) => {
-    update(ref(db, 'rooms/' + roomId), updates);
-  };
 
-  // --- NAVIGASI ---
+
+  // --- NAVIGASI (PREVENT BACK) ---
   useEffect(() => {
     const handleBeforeUnload = (e: any) => {
       if (!winner) { e.preventDefault(); e.returnValue = ''; return ''; }
@@ -194,8 +195,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   const handleConfirmExit = () => {
     if (!winner) {
         const opponentKey = myRole === 1 ? 'p2' : 'p1';
-        const opponentName = playerNames[opponentKey] || "Opponent";
-        updateDB({ winner: opponentName }); 
+        updateDB({ winner: opponentKey }); 
     }
     setShowExitModal(false);
     navigate(pendingNavigation);
@@ -271,7 +271,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         
         trackerPos = (trackerPos + 1) % 32;
         
-        // --- LOGIKA PAS LEWAT START ---
+        // --- LOGIKA LEWAT START ---
         if (trackerPos === 0) { 
              const updates: any = {};
              
@@ -282,12 +282,12 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
              updates[`balances/${currentPlayerKey}`] = currentBalance + finalBonus;
              updates[`positions/${currentPlayerKey}`] = trackerPos;
              
-             // 2. KURANGI SISA PUTARAN (DECREMENT)
+             // 2. KURANGI PUTARAN (DECREMENT)
              const currentRounds = gameState.remainingRounds !== undefined ? gameState.remainingRounds : gameState.maxTurns;
              const newRounds = currentRounds - 1;
              updates['remainingRounds'] = newRounds;
 
-             // 3. CEK GAME OVER JIKA PUTARAN HABIS
+             // 3. CEK GAME OVER (PUTARAN HABIS)
              if (newRounds <= 0) {
                  setTimeout(() => handleGameOverCheck(), 1000); 
              }
@@ -307,15 +307,15 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   };
 
   const handleGameOverCheck = () => {
-      const p1Bal = balances.p1;
-      const p2Bal = balances.p2;
+      const p1Bal = Number(balances.p1);
+      const p2Bal = Number(balances.p2);
       
-      let winnerName = "";
-      if (p1Bal > p2Bal) winnerName = playerNames.p1;
-      else if (p2Bal > p1Bal) winnerName = playerNames.p2;
-      else winnerName = "SERI (Uang Sama)";
+      let winnerKey = "";
+      if (p1Bal > p2Bal) winnerKey = 'p1';
+      else if (p2Bal > p1Bal) winnerKey = 'p2';
+      else winnerKey = "draw";
 
-      updateDB({ winner: winnerName });
+      updateDB({ winner: winnerKey });
   };
 
   const handleTileClick = (targetIndex: any) => {
@@ -419,13 +419,12 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   const handlePayTax = () => {
     if (turn !== myRole) return;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
-    
-    // @ts-ignore
     const newBal = Math.max(0, balances[playerKey] - interactionData.amount);
     
     updateDB({ [`balances/${playerKey}`]: newBal });
     triggerStatEffect(playerKey, 'LOSS');
     
+    // CEK BANGKRUT
     if (newBal <= 0) {
         handleBankruptcy(playerKey);
     } else {
@@ -452,8 +451,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         updateDB({ [`positions/${playerKey}`]: 24, phase: 'TRAVEL_SELECT' }); 
         showNotification("BENAR! Silakan Pilih Tujuan", 'success');
     } else {
-        // SALAH = -500 & PENJARA
-        // @ts-ignore
         const currentBal = balances[playerKey];
         const newBal = Math.max(0, currentBal - 500);
         
@@ -466,7 +463,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         triggerStatEffect(playerKey, 'LOSS');
         showNotification("SALAH! -Rp 500 & Masuk Penjara", 'error');
 
-        // --- FIX BUG: CEK KEBANGKRUTAN DISINI ---
+        // --- CEK KEBANGKRUTAN JIKA UANG 0 ---
         if (newBal <= 0) {
             setTimeout(() => handleBankruptcy(playerKey), 1000);
         } else {
@@ -479,8 +476,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     if (turn !== myRole) return;
     const { price, tileIndex } = interactionData;
     const playerKey = myRole === 1 ? 'p1' : 'p2';
-    
-    // @ts-ignore
     const newBal = balances[playerKey] - price;
     
     updateDB({ [`balances/${playerKey}`]: newBal, [`ownership/${tileIndex}`]: playerKey });
@@ -498,7 +493,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     const opponentKey = myRole === 1 ? 'p2' : 'p1';
     const { rent } = interactionData;
     
-    // @ts-ignore
     const newBal = balances[playerKey] - rent;
     
     updateDB({ [`balances/${playerKey}`]: newBal, [`balances/${opponentKey}`]: balances[opponentKey] + rent });
@@ -565,8 +559,8 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   };
   const handleBankruptcy = (bankruptPlayer: any) => {
       const winnerKey = bankruptPlayer === 'p1' ? 'p2' : 'p1';
-      const winnerName = playerNames[winnerKey];
-      updateDB({ winner: winnerName });
+      // Simpan CODE (p1/p2) bukan nama, agar tidak bug nama kembar
+      updateDB({ winner: winnerKey });
   };
 
   const handleOptionClick = (choice: any, type: any) => { 
@@ -642,7 +636,10 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   if (!gameState) return <div className="text-center mt-20 text-white">Syncing Data...</div>;
 
   if (winner) {
-      const imWinner = winner === (myRole === 1 ? playerNames.p1 : playerNames.p2);
+      // LOGIKA BARU UNTUK CEK PEMENANG (PAKAI KODE P1/P2)
+      const myPlayerKey = myRole === 1 ? 'p1' : 'p2';
+      const imWinner = winner === myPlayerKey;
+      const winnerName = winner === 'p1' ? playerNames.p1 : (winner === 'p2' ? playerNames.p2 : 'SERI (Uang Sama)');
       
       return (
         <div className="game-bg-container flex flex-col items-center justify-center p-4 text-center">
@@ -682,8 +679,10 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         </nav>
       </header>
 
+      {/* --- BOARD FLEX CENTERED --- */}
       <main className="lobby-content flex items-center justify-center">
         
+        {/* Responsive Board: Ukuran max diatur agar pas di layar tanpa scroll */}
         <div 
             className="relative bg-gray-800 p-1 rounded-lg shadow-2xl"
             style={{ 
@@ -726,6 +725,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                         {jailedPlayers.p1 && <span className="text-[6px] md:text-[10px] text-red-600 font-bold animate-pulse">DITAHAN</span>}
                     </div>
                     
+                    {/* --- SISA PUTARAN --- */}
                     <div className="flex flex-col items-center justify-center pt-2">
                         <span className="text-[8px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest">SISA PUTARAN</span>
                         <span className="text-xl md:text-3xl font-black text-blue-600">{remainingRounds}</span>
@@ -819,8 +819,8 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                             {interactionData.type === 'ASSET_DIVIDEND' && (
                                 <>
                                     <h3 className="text-sm md:text-xl font-bold text-green-600 mb-2">DIVIDEN</h3>
-                                    <p className="text-xl md:text-4xl font-black text-gray-800 mb-4">+ {interactionData.dividend}</p>
-                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-2 md:py-3 rounded-lg md:rounded-xl font-bold shadow-lg text-xs md:text-base">AMBIL</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
+                                    <p className="text-xl md:text-4xl font-black text-gray-800 mb-2">+ {interactionData.dividend}</p>
+                                    {turn === myRole ? <button onClick={handleClaimInterest} className="w-full bg-green-600 text-white py-1 md:py-3 rounded-lg md:rounded-xl font-bold shadow-lg text-xs md:text-base">AMBIL</button> : <p className="text-gray-400 text-[10px]">Menunggu lawan...</p>}
                                 </>
                             )}
                         </div>
@@ -841,6 +841,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
 
                 <div className="w-full text-center py-0.5 bg-gray-50 border-t border-gray-100">
                     <span className="text-[8px] md:text-[10px] text-gray-400 font-mono">
+                        
                         Posisi: {playerNames.p1}({positions.p1}) | {playerNames.p2}({positions.p2})
                     </span>
                 </div>
@@ -869,47 +870,83 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
         </div>
       )}
 
+      {/* --- POPUPS INTERAKSI FULLSCREEN --- */}
       {phase === 'INTERACTION' && interactionData?.type === 'INFO_POPUP' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-md animate-fadeIn">
-            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-cyan-400">
-                <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-cyan-600 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">INFOGRAFIS</div>
-                <div className="mt-4 rounded-xl overflow-hidden border border-gray-200">
-                    <img src={interactionData.content} alt="Informasi Keuangan" className="w-full h-auto object-contain max-h-[65vh] md:max-h-[70vh]" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm animate-fadeIn">
+            <div className="relative bg-white p-3 md:p-6 rounded-3xl shadow-2xl flex flex-col items-center 
+                            w-[90vw] md:w-auto md:max-w-3xl
+                            max-h-[90vh] overflow-y-auto animate-zoomIn border-4 border-cyan-400">
+                
+                <div className="bg-cyan-600 text-white px-6 py-2 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-xs md:text-sm mb-4">
+                    INFOGRAFIS
                 </div>
-                <div className="mt-4 flex justify-center">
+
+                <div className="rounded-xl overflow-hidden border border-gray-200 w-full flex justify-center bg-gray-50">
+                    <img 
+                        src={interactionData.content} 
+                        alt="Informasi Keuangan" 
+                        className="w-auto h-auto max-h-[65vh] md:max-h-[70vh] object-contain" 
+                    />
+                </div>
+
+                <div className="mt-6 w-full flex justify-center">
                     {turn === myRole ? (
-                        <button onClick={() => endTurn()} className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 md:px-10 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-lg shadow-lg transition-transform transform hover:scale-105 active:scale-95">MENGERTI</button>
-                    ) : <div className="text-white bg-gray-800 px-4 py-2 rounded-lg font-bold text-[10px] bg-opacity-80">Menunggu lawan membaca info...</div>}
+                        <button onClick={() => endTurn()} className="bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-3 rounded-xl font-bold text-sm md:text-lg shadow-lg transition-transform transform hover:scale-105 active:scale-95 w-full md:w-auto">
+                            MENGERTI
+                        </button>
+                    ) : (
+                        <div className="text-white bg-gray-800 px-4 py-2 rounded-lg font-bold text-xs bg-opacity-80">
+                            Menunggu lawan membaca info...
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
       )}
 
       {phase === 'INTERACTION' && interactionData?.type === 'ASSET_BUY' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-md animate-fadeIn">
-            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-pink-500">
-                <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-pink-500 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">SEKTOR</div>
-                <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm animate-fadeIn">
+            <div className="relative bg-white p-3 md:p-6 rounded-3xl shadow-2xl flex flex-col items-center 
+                            w-[90vw] md:w-auto md:max-w-2xl
+                            max-h-[90vh] overflow-y-auto animate-zoomIn border-4 border-pink-500">
+                
+                <div className="bg-pink-500 text-white px-6 py-2 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-xs md:text-sm mb-2">
+                    SEKTOR
+                </div>
+
+                <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center w-full">
                     {interactionData.popupImage ? (
-                        <img src={interactionData.popupImage} alt="Asset Offer" className="w-full h-auto object-contain max-h-[50vh] md:max-h-[60vh]" />
+                        <img 
+                            src={interactionData.popupImage} 
+                            alt="Asset Offer" 
+                            className="w-auto h-auto max-h-[50vh] md:max-h-[60vh] object-contain" 
+                        />
                     ) : (
                         <div className="p-10 text-gray-400">Gambar Sektor Tidak Ditemukan</div>
                     )}
                 </div>
-                <div className="text-center mt-2 mb-2 md:mb-4">
-                    <p className="text-gray-500 text-[8px] md:text-xs font-bold uppercase">HARGA SEKTOR</p>
-                    <p className="text-lg md:text-3xl font-black text-green-600">Rp {interactionData.price}</p>
+
+                <div className="text-center mt-4 mb-4 w-full">
+                    <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase">HARGA SEKTOR</p>
+                    <p className="text-2xl md:text-4xl font-black text-green-600">Rp {interactionData.price}</p>
                 </div>
-                <div className="mt-2 flex gap-3 justify-center px-4 pb-2">
+
+                <div className="w-full flex gap-3 justify-center">
                     {turn === myRole ? (
                         <>
-                            <button onClick={() => endTurn()} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-lg">SKIP</button>
-                            <button onClick={handleBuyAsset} disabled={balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price} className={`flex-1 py-2 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-lg text-white shadow-lg ${balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price ? 'bg-gray-400 cursor-not-allowed opacity-70' : 'bg-green-600 hover:bg-green-700 active:scale-95'}`}>
-                                {balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price ? "KURANG" : "BELI"}
+                            <button onClick={() => endTurn()} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-bold text-xs md:text-lg transition-transform transform hover:scale-105">
+                                SKIP
+                            </button>
+                            
+                            <button onClick={handleBuyAsset} disabled={balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price} className={`flex-1 py-3 rounded-xl font-bold text-xs md:text-lg text-white shadow-lg transition-transform transform ${balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price ? 'bg-gray-400 cursor-not-allowed opacity-70' : 'bg-green-600 hover:bg-green-700 active:scale-95'}`}>
+                                
+                                {balances[turn === 1 ? 'p1' : 'p2'] < interactionData.price ? "UANG KURANG" : "BELI"}
                             </button>
                         </>
                     ) : (
-                        <div className="text-white bg-gray-800 px-4 py-2 rounded-lg font-bold text-[10px] bg-opacity-80 w-full text-center">Menunggu lawan memutuskan...</div>
+                        <div className="text-white bg-gray-800 px-4 py-2 rounded-lg font-bold text-xs bg-opacity-80 w-full text-center">
+                            Menunggu lawan memutuskan...
+                        </div>
                     )}
                 </div>
             </div>
@@ -918,17 +955,29 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
 
       {phase === 'INTERACTION' && interactionData?.type === 'QUIZ_POPUP' && turn === myRole && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-md animate-fadeIn">
-            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-green-500">
-                <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-yellow tracking-widest uppercase text-[10px] md:text-sm">QUIZ</div>
-                <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
+            <div className="relative bg-white p-3 md:p-6 rounded-3xl shadow-2xl flex flex-col items-center 
+                            w-[90vw] md:w-auto md:max-w-2xl
+                            max-h-[90vh] overflow-y-auto animate-zoomIn border-4 border-green-500">
+                
+                <div className="bg-green-600 text-white px-6 py-2 rounded-full font-bold shadow-md border-2 border-yellow-400 tracking-widest uppercase text-xs md:text-sm mb-2">
+                    QUIZ
+                </div>
+
+                <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center w-full">
                     {interactionData.image ? (
-                        <img src={interactionData.image} alt="Quiz Question" className="w-full h-auto object-contain max-h-[50vh] md:max-h-[60vh]" />
+                        <img 
+                            src={interactionData.image} 
+                            alt="Quiz Question" 
+                            className="w-auto h-auto max-h-[50vh] md:max-h-[60vh] object-contain" 
+                        />
                     ) : (
                         <div className="p-10 text-gray-400">Memuat Soal...</div>
                     )}
                 </div>
-                <p className="text-center text-gray-500 text-[10px] md:text-sm font-bold mt-2 mb-1">PILIH JAWABAN YANG BENAR:</p>
-                <div className="grid grid-cols-2 gap-2 md:gap-3 p-2">
+
+                <p className="text-center text-gray-500 text-xs md:text-sm font-bold mt-4 mb-2">PILIH JAWABAN YANG BENAR:</p>
+                
+                <div className="grid grid-cols-2 gap-3 w-full">
                     {['A', 'B', 'C', 'D'].map((option) => (
                         <button
                             key={option}
@@ -945,34 +994,43 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
       )}
 
       {phase === 'INTERACTION' && interactionData?.type === 'QUIZ_POPUP' && turn !== myRole && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl text-center border-4 border-gray-300">
-                <div className="text-4xl md:text-6xl mb-2 md:mb-4">🤔</div>
-                <h2 className="text-sm md:text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">
-                    Menunggu <span className="text-blue-600">{turn === 1 ? playerNames.p1 : playerNames.p2}</span> menjawab Quiz
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
+            <div className="bg-white p-8 rounded-3xl shadow-2xl text-center border-4 border-gray-300 animate-zoomIn">
+                <div className="text-6xl mb-4 animate-bounce">🤔</div>
+                <h2 className="text-xl md:text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">
+                    
+                    Menunggu <span className="text-blue-600">{turn === 1 ? playerNames.p1 : playerNames.p2}</span>
                 </h2>
-                <div className="mt-4 flex justify-center gap-2">
-                    <span className="w-2 h-2 md:w-3 md:h-3 bg-gray-400 rounded-full animate-bounce"></span>
-                    <span className="w-2 h-2 md:w-3 md:h-3 bg-gray-400 rounded-full animate-bounce delay-100"></span>
-                    <span className="w-2 h-2 md:w-3 md:h-3 bg-gray-400 rounded-full animate-bounce delay-200"></span>
-                </div>
+                <p className="text-gray-500 font-bold">Menjawab Quiz</p>
             </div>
         </div>
       )}
       
       {phase === 'JAIL_QUIZ' && interactionData?.type === 'JAIL_QUIZ_POPUP' && turn === myRole && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-md animate-fadeIn">
-            <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-[90%] md:max-w-lg w-full mx-4 transform transition-all animate-zoomIn border-4 border-red-500">
-                <div className="absolute -top-3 md:-top-5 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-1 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-[10px] md:text-sm">FRAUD QUIZ</div>
-                <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center">
+            <div className="relative bg-white p-3 md:p-6 rounded-3xl shadow-2xl flex flex-col items-center 
+                            w-[90vw] md:w-auto md:max-w-2xl
+                            max-h-[90vh] overflow-y-auto animate-zoomIn border-4 border-red-500">
+                
+                <div className="bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-md border-2 border-white tracking-widest uppercase text-xs md:text-sm mb-2">
+                    FRAUD QUIZ
+                </div>
+
+                <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-100 flex justify-center w-full">
                     {interactionData.image ? (
-                        <img src={interactionData.image} alt="Jail Quiz Question" className="w-full h-auto object-contain max-h-[50vh] md:max-h-[60vh]" />
+                        <img 
+                            src={interactionData.image} 
+                            alt="Jail Quiz Question" 
+                            className="w-auto h-auto max-h-[50vh] md:max-h-[60vh] object-contain" 
+                        />
                     ) : (
                         <div className="p-10 text-gray-400">Memuat Soal...</div>
                     )}
                 </div>
-                <p className="text-center text-gray-500 text-[10px] md:text-sm font-bold mt-2 mb-1">PILIH JAWABAN BENAR:</p>
-                <div className="grid grid-cols-2 gap-2 md:gap-3 p-2">
+
+                <p className="text-center text-gray-500 text-xs md:text-sm font-bold mt-4 mb-2">PILIH JAWABAN BENAR:</p>
+                
+                <div className="grid grid-cols-2 gap-3 w-full">
                     {['A', 'B', 'C', 'D'].map((option) => (
                         <button
                             key={option}
@@ -989,11 +1047,12 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
       )}
 
       {phase === 'JAIL_QUIZ' && interactionData?.type === 'JAIL_QUIZ_POPUP' && turn !== myRole && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl text-center border-4 border-gray-300 animate-pulse">
-                <div className="text-4xl md:text-6xl mb-2 md:mb-4">⚖️</div>
-                <h2 className="text-sm md:text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">SIDANG BERLANGSUNG</h2>
-                <p className="text-gray-600 font-bold text-xs md:text-lg">Menunggu <span className="text-blue-600">{turn === 1 ? playerNames.p1 : playerNames.p2}</span> menjawab...</p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white p-8 rounded-3xl shadow-2xl text-center border-4 border-gray-300 animate-pulse">
+                <div className="text-6xl mb-4">⚖️</div>
+                <h2 className="text-xl md:text-2xl font-black text-gray-800 uppercase mb-2 tracking-widest">SIDANG BERLANGSUNG</h2>
+                
+                <p className="text-gray-600 font-bold text-sm md:text-lg">Menunggu <span className="text-blue-600">{turn === 1 ? playerNames.p1 : playerNames.p2}</span> di pengadilan...</p>
             </div>
         </div>
       )}
