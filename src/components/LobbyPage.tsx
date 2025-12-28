@@ -23,7 +23,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
 
   const handleHostGame = async () => {
     if (!playerName.trim()) { setError("Nama tidak boleh kosong!"); return; }
-    if (maxTurns < 3 || maxTurns > 50) { setError("Putaran harus antara 1 - 50!"); return; }
+    if (maxTurns < 3 || maxTurns > 50) { setError("Putaran harus antara 3 - 50!"); return; }
     
     setIsLoading(true); setError('');
     const newRoomId = generateRoomId();
