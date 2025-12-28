@@ -715,8 +715,16 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                 </div>
               );
             })}
-
-            <div className="bg-white col-start-2 col-end-9 row-start-2 row-end-9 m-0.5 rounded-lg flex flex-col justify-between shadow-inner relative overflow-hidden">
+                <div 
+                    className="bg-white col-start-2 col-end-9 row-start-2 row-end-9 m-0.5 rounded-lg flex flex-col justify-between shadow-inner relative overflow-hidden"
+                    style={{
+                        backgroundImage: "url('/img/board/board.png')",
+                        backgroundSize: '350px',
+                        backgroundPosition: 'center 93%', 
+                        backgroundRepeat: 'no-repeat',
+                        backgroundColor: 'white'
+                    }}
+                >
                 <div className="w-full flex justify-between items-start p-1 z-10 border-b border-gray-100 bg-gray-50 bg-opacity-80">
                     <div className={getStatClass('p1')}>
                         <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider block truncate w-full text-center">{playerNames.p1}</span>
@@ -839,7 +847,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
                     )}
                 </div>
 
-                <div className="w-full text-center py-0.5 bg-gray-50 border-t border-gray-100">
+                <div className="w-full text-center py-0.5 bg-gray-40 border-gray-100">
                     <span className="text-[8px] md:text-[10px] text-gray-400 font-mono">
                         
                         Posisi: {playerNames.p1}({positions.p1}) | {playerNames.p2}({positions.p2})
