@@ -15,7 +15,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
   const [mode, setMode] = useState<'MENU' | 'HOST' | 'JOIN'>('MENU');
   const [playerName, setPlayerName] = useState('');
   const [roomId, setRoomId] = useState('');
-  const [maxTurns, setMaxTurns] = useState(1);
+  const [maxTurns, setMaxTurns] = useState(3);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -23,7 +23,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
 
   const handleHostGame = async () => {
     if (!playerName.trim()) { setError("Nama tidak boleh kosong!"); return; }
-    if (maxTurns < 1 || maxTurns > 50) { setError("Putaran harus antara 1 - 50!"); return; }
+    if (maxTurns < 3 || maxTurns > 50) { setError("Putaran harus antara 1 - 50!"); return; }
     
     setIsLoading(true); setError('');
     const newRoomId = generateRoomId();
@@ -103,7 +103,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
                 <input 
                   type="number" 
                   className="custom-input" 
-                  min={1} 
+                  min={3} 
                   max={50} 
                   value={maxTurns} 
                   onChange={(e) => setMaxTurns(Number(e.target.value))} 

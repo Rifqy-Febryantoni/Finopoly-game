@@ -58,7 +58,7 @@ const WaitingRoomPage: React.FC<WaitingRoomProps> = ({ roomId, playerRole, onSta
   const p1Name = roomData?.playerNames?.p1 || "Unknown";
   const p2Name = roomData?.playerNames?.p2 || "Waiting...";
   const isP2Connected = roomData?.playersConnected >= 2;
-  const maxTurns = roomData?.maxTurns || 5; 
+  const maxTurns = roomData?.maxTurns || 3; 
 
   if (!roomData) return <div className="game-bg-container"><div className="text-white text-center mt-20">Loading Room...</div></div>;
 
