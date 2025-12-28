@@ -95,18 +95,22 @@ const IntroductionPage: React.FC = () => {
                 </div>
             </div>
         </div>
-
         <div className="section-container animate-fadeIn">
             <div className="content-card video-card-wrapper">
                 <h2 className="section-title-text">SCAM AWARENESS</h2>
                 
-                <div className="video-placeholder">
-                    <span className="video-text">PLACEHOLDER</span>
-                    <div className="play-button-overlay" onClick={handlePlayClick}>
-                        ▶
-                    </div>
+                {/* YouTube Embed */}
+                <div className="video-responsive-container">
+                    <iframe 
+                        src="https://www.youtube.com/embed/jg7HoH91egI" 
+                        title="Edukasi Scam: Kenali & Laporkan"
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowFullScreen
+                        className="youtube-iframe"
+                    ></iframe>
                 </div>
-              <p className="scam-text">
+                <p className="scam-text">
                   Jika anda mengalami atau menjadi korban penipuan transaksi keuangan, laporkan ke{' '}
                   <a 
                       href="https://iasc.ojk.go.id/" 
@@ -119,7 +123,6 @@ const IntroductionPage: React.FC = () => {
               </p>
             </div>
         </div>
-
         <div className="play-btn-section animate-fadeIn">
             <div className="play-text" onClick={handlePlayClick}>
                 PLAY GAME
