@@ -60,13 +60,17 @@ const IntroductionPage: React.FC = () => {
 
         <div className="section-container animate-fadeIn">
             <div className="content-card video-card-wrapper">
-                <h2 className="section-title-text">FIN-TECH OVERVIEW</h2>
-                
-                <div className="video-placeholder">
-                    <span className="video-text">PLACEHOLDER</span>
-                    <div className="play-button-overlay" onClick={handlePlayClick}>
-                        ▶
-                    </div>
+                <h2 className="section-title-text">FINTECH OVERVIEW</h2>
+                {/* YouTube Embed */}
+                <div className="video-responsive-container">
+                    <iframe 
+                        src="https://www.youtube.com/embed/--f-tj61OjA" 
+                        title="Financial Technology Education"
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowFullScreen
+                        className="youtube-iframe"
+                    ></iframe>
                 </div>
             </div>
         </div>
