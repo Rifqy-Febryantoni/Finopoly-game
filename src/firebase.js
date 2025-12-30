@@ -1,20 +1,16 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
-// --- PASTE KONFIGURASI DARI FIREBASE CONSOLE DI SINI ---
-// Contoh (JANGAN PAKAI YANG INI, PAKAI PUNYAMU):
 const firebaseConfig = {
-  apiKey: "AIzaSyB8XBuN4MCqfRrmoRbsqM3Zu7Z7WLBtK8Q",
-  authDomain: "fintech-4e617.firebaseapp.com",
-  databaseURL: "https://fintech-4e617-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "fintech-4e617",
-  storageBucket: "fintech-4e617.firebasestorage.app",
-  messagingSenderId: "942765896788",
-  appId: "1:942765896788:web:4adc8c37f53a44ba52e9c1",
-  measurementId: "G-PCGPCWRJ8W"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);

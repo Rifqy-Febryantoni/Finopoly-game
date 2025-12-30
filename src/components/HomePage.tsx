@@ -51,7 +51,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
-        <div className="team-section animate-fadeIn">
+        {/* <div className="team-section animate-fadeIn">
           <h2 className="team-title">DISUSUN OLEH:</h2>
           
           <div className="team-grid">
@@ -74,7 +74,7 @@ const HomePage: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
       </main>
 

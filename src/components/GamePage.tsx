@@ -60,7 +60,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   const audioRef = useRef(new Audio(bgmFile)); 
   const [isMuted, setIsMuted] = useState(false);
 
-  // --- DATA ACCESSORS ---
   const positions = gameState?.positions || { p1: 0, p2: 0 };
   const balances = {
       p1: typeof gameState?.balances?.p1 === 'number' ? gameState.balances.p1 : 1000,
@@ -76,16 +75,14 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
       p2: typeof gameState?.growthBoosts?.p2 === 'number' ? gameState.growthBoosts.p2 : 0
   };
   const interactionData = gameState?.interactionData || null;
-  const winner = gameState?.winner || null; // Sekarang menyimpan 'p1', 'p2', atau 'draw'
+  const winner = gameState?.winner || null; 
   const playersConnected = gameState?.playersConnected || 1;
   const playerNames = gameState?.playerNames || { p1: "Player 1", p2: "Player 2" };
 
-  // --- LOGIKA PUTARAN (SISA PUTARAN) ---
   const remainingRounds = gameState?.remainingRounds !== undefined ? gameState.remainingRounds : (gameState?.maxTurns || 15);
 
   const diceImages = [null, dice1, dice2, dice3, dice4, dice5, dice6];
 
-  // --- AUDIO ---
   useEffect(() => {
     const audio = audioRef.current;
     audio.loop = true; 
@@ -93,7 +90,7 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     audio.muted = isMuted;
     const playPromise = audio.play();
     if (playPromise !== undefined) {
-      playPromise.catch(() => {}); // Ignore autoplay error
+      playPromise.catch(() => {}); 
     }
     return () => {
       audio.pause();
@@ -107,7 +104,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     setIsMuted(!isMuted);
   };
 
-  // --- PRELOAD ASSETS ---
   useEffect(() => {
     const preloadImages = async () => {
         const imageUrls = [
@@ -132,18 +128,15 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     preloadImages();
   }, []);
 
-  // --- AUTO DISCONNECT (MENYERAH JIKA KELUAR) ---
   useEffect(() => {
     if (!roomId || winner) return;
     const roomRef = ref(db, 'rooms/' + roomId);
-    // Simpan code lawan ('p1' atau 'p2') sebagai winner jika user disconnect
     const opponentKey = myRole === 1 ? 'p2' : 'p1';
     
     onDisconnect(roomRef).update({ winner: opponentKey });
     return () => { onDisconnect(roomRef).cancel(); };
   }, [roomId, winner, myRole]);
 
-  // --- SYNC GAME STATE ---
   useEffect(() => {
     if (!roomId) return;
     const roomRef = ref(db, 'rooms/' + roomId);
@@ -167,7 +160,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
 
 
 
-  // --- NAVIGASI (PREVENT BACK) ---
   useEffect(() => {
     const handleBeforeUnload = (e: any) => {
       if (!winner) { e.preventDefault(); e.returnValue = ''; return ''; }
@@ -206,7 +198,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     setPendingNavigation(null);
   };
 
-  // --- HELPERS ---
   const showNotification = (message: any, type = 'info', duration = 3000) => {
     setNotification({ message, type });
     if (duration > 0) setTimeout(() => setNotification(null), duration);
@@ -282,12 +273,10 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
              updates[`balances/${currentPlayerKey}`] = currentBalance + finalBonus;
              updates[`positions/${currentPlayerKey}`] = trackerPos;
              
-             // 2. KURANGI PUTARAN (DECREMENT)
              const currentRounds = gameState.remainingRounds !== undefined ? gameState.remainingRounds : gameState.maxTurns;
              const newRounds = currentRounds - 1;
              updates['remainingRounds'] = newRounds;
 
-             // 3. CEK GAME OVER (PUTARAN HABIS)
              if (newRounds <= 0) {
                  setTimeout(() => handleGameOverCheck(), 1000); 
              }
@@ -324,13 +313,11 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     updateDB({ phase: 'MOVING' });
     let updates: any = { [`positions/${currentPlayerKey}`]: targetIndex };
     if (targetIndex === 0) {
-        // Jika travel langsung ke Start
         const baseBonus = 100;
         const finalBonus = calculateBoostedAmount(baseBonus, currentPlayerKey);
         const currentBalance = Number(balances[currentPlayerKey]) || 0;
         updates[`balances/${currentPlayerKey}`] = currentBalance + finalBonus;
         
-        // Decrement Putaran
         const currentRounds = gameState.remainingRounds !== undefined ? gameState.remainingRounds : gameState.maxTurns;
         const newRounds = currentRounds - 1;
         updates['remainingRounds'] = newRounds;
@@ -424,7 +411,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
     updateDB({ [`balances/${playerKey}`]: newBal });
     triggerStatEffect(playerKey, 'LOSS');
     
-    // CEK BANGKRUT
     if (newBal <= 0) {
         handleBankruptcy(playerKey);
     } else {
@@ -559,7 +545,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   };
   const handleBankruptcy = (bankruptPlayer: any) => {
       const winnerKey = bankruptPlayer === 'p1' ? 'p2' : 'p1';
-      // Simpan CODE (p1/p2) bukan nama, agar tidak bug nama kembar
       updateDB({ winner: winnerKey });
   };
 
@@ -636,7 +621,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
   if (!gameState) return <div className="text-center mt-20 text-white">Syncing Data...</div>;
 
   if (winner) {
-      // LOGIKA BARU UNTUK CEK PEMENANG (PAKAI KODE P1/P2)
       const myPlayerKey = myRole === 1 ? 'p1' : 'p2';
       const imWinner = winner === myPlayerKey;
       const winnerName = winner === 'p1' ? playerNames.p1 : (winner === 'p2' ? playerNames.p2 : 'SERI (Uang Sama)');
@@ -682,7 +666,6 @@ const GameBoard = ({ roomId, myRole }: { roomId: any, myRole: any }) => {
       {/* --- BOARD FLEX CENTERED --- */}
       <main className="lobby-content flex items-center justify-center">
         
-        {/* Responsive Board: Ukuran max diatur agar pas di layar tanpa scroll */}
         <div 
             className="relative bg-gray-800 p-1 rounded-lg shadow-2xl"
             style={{ 

@@ -30,7 +30,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
     
     try {
       const snapshot = await get(child(ref(db), `rooms/${newRoomId}`));
-      if (snapshot.exists()) { handleHostGame(); return; } // Retry if ID exists
+      if (snapshot.exists()) { handleHostGame(); return; } 
       
       await set(ref(db, 'rooms/' + newRoomId), {
         players: { p1: { name: playerName, balance: 1000, position: 0, isReady: true } },
@@ -40,7 +40,7 @@ const LobbyPage: React.FC<LobbyProps> = ({ onJoinGame }) => {
         phase: 'IDLE', 
         playersConnected: 1, 
         status: 'WAITING',
-        maxTurns: Number(maxTurns) // Simpan jumlah puFtaran ke database
+        maxTurns: Number(maxTurns) 
       });
 
       onJoinGame(newRoomId, '1', playerName);
