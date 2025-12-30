@@ -1,6 +1,8 @@
 # Finopoly: Platform Gamifikasi Edukasi Literasi Keuangan
 
-![Finopoly Logo](src/img/Logo.png)
+<div align="center">
+  <img src="src/img/Logo.png" alt="Finopoly Logo" width="300">
+</div>
 
 ## Deskripsi Proyek
 
@@ -14,14 +16,16 @@ Tujuan utama dari platform ini adalah memberikan pemahaman praktis mengenai kons
 
 **Tampilan Antarmuka:**
 
-1.  **Lobby & Waiting Room**
+1.  **Lobby**
     ![Lobby Interface](docs/screenshot_lobby.png)
+    **Hosting Interface**
     ![Host Interface](docs/screenshot_lobby_host.png)
+    **Join Interface**
     ![Join Interface](docs/screenshot_lobby_join.png)
     *Antarmuka pembuatan ruang permainan dan sinkronisasi pemain.*
 
 2.  **Gameplay & Board**
-    ![Gameplay Interface](docs\screenshot_board.png)
+    ![Gameplay Interface](docs/screenshot_board.png)
     *Papan permainan interaktif dengan fitur dadu, kartu aset, dan kuis.*
 
 ## Fitur Utama
@@ -49,6 +53,7 @@ Proyek ini dibangun menggunakan teknologi modern untuk memastikan performa, skal
 ## Struktur Direktori
 
 Arsitektur proyek disusun secara modular untuk memisahkan logika bisnis, komponen UI, dan aset data.
+```
 finopoly/
 ├── public/
 │   ├── img/
@@ -85,8 +90,7 @@ finopoly/
 ├── index.html
 ├── package.json
 └── ...
-
-## Penjelasan Kode
+```
 
 ## Penjelasan Kode
 
@@ -148,7 +152,7 @@ Ikuti langkah-langkah berikut untuk menjalankan proyek di lingkungan pengembanga
 
 1.  **Clone Repositori**
     ```bash
-    git clone [https://github.com/username/finopoly.git](https://github.com/username/finopoly.git)
+    git clone repo ini
     cd finopoly
     ```
 
@@ -196,7 +200,3 @@ Literasi keuangan merupakan keterampilan hidup yang esensial, namun metode pembe
 ## Penulis
 
 Dikembangkan oleh **M. Rifqy Febryantoni**.
-
-## Lisensi
-
-Proyek ini didistribusikan di bawah Lisensi MIT. Silakan lihat file `LICENSE` untuk informasi lebih lanjut.
